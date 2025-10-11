@@ -9,19 +9,34 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ant-design/icons": "^5.5.2",
+    "@ant-design/nextjs-registry": "^1.0.1",
+    "@gal-ui/components": "^1.0.4",
+    "@rainbow-me/rainbowkit": "^2.1.7",
+    "@supabase/supabase-js": "^2.39.0",
+    "@tanstack/react-query": "^5.90.2",
+    "antd": "^5.22.5",
+    "leaflet": "^1.9.4",
+    "next": "15.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "next": "15.5.4"
+    "react-leaflet": "^4.2.1",
+    "viem": "^2.21.45",
+    "wagmi": "^2.12.25",
+    "zod": "^3.22.4",
+    "zustand": "^5.0.2"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@types/leaflet": "^1.9.8",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
+    "autoprefixer": "^10.4.20",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
-    "@eslint/eslintrc": "^3"
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5"
   }
 }
