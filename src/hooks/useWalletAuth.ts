@@ -49,13 +49,15 @@ export function useWalletAuth() {
       setWalletAuthState((prev) => ({ ...prev, isCheckingAuth: true }));
 
       const result = await checkWalletExists(walletAddress);
-
+      console.log(result, "result");
       if (result.success && result.data.exists) {
-        await login(walletAddress);
+        const loginData = await login(walletAddress);
         setWalletAuthState({
           needsRegistration: false,
           isCheckingAuth: false,
         });
+
+        console.log(loginData, "result");
       } else {
         setWalletAuthState({
           needsRegistration: true,

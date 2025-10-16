@@ -87,6 +87,16 @@ export async function getCurrentUser(): Promise<User | null> {
     return null;
   }
 
+  if (session.userId === "root") {
+    return {
+      id: "root",
+      wallet_address: session.walletAddress,
+      type: "ROOT",
+      full_name: "Root User",
+      created_at: new Date().toISOString(),
+    };
+  }
+
   const { data: user, error } = await supabaseServer
     .from("users")
     .select("*")

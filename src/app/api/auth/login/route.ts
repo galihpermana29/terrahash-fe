@@ -9,11 +9,29 @@ import { NextRequest } from "next/server";
 import { authRepository } from "@/lib/repository/auth";
 import { errorResponse, successResponse } from "@/lib/utils/response";
 import { createSession } from "@/lib/utils/session";
+import { User } from "@/lib/types/user";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { wallet_address } = body;
+    console.log(wallet_address, "wallet address?");
+
+    const isRootWallet = wallet_address === process.env.ROOT_ADMIN_WALLETS;
+
+    if (isRootWallet) {
+      const rootUser = {
+        wallet_address,
+        type: "ROOT" as User["type"],
+        full_name: "Root User",
+        id: "root",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      await createSession(rootUser);
+      return successResponse(rootUser);
+    }
 
     // Validate wallet address
     if (!wallet_address || typeof wallet_address !== "string") {
@@ -52,9 +70,7 @@ export async function POST(request: NextRequest) {
 
     // If GOV user, verify still whitelisted
     if (user.type === "GOV") {
-      const isWhitelisted = await authRepository.isWhitelisted(
-        normalizedWallet
-      );
+      const isWhitelisted = await authRepository.isWhitelisted(user.id);
       if (!isWhitelisted) {
         return errorResponse(
           "GOVERNMENT_ACCESS_REVOKED",

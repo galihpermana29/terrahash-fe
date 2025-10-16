@@ -56,12 +56,22 @@ export class AuthRepository {
   /**
    * Check if wallet is whitelisted (for GOV users)
    */
-  async isWhitelisted(walletAddress: string): Promise<boolean> {
+  async isWhitelisted(userId: string): Promise<boolean> {
     const { data, error } = await supabaseServer
-      .from("gov_whitelist")
-      .select("id, status")
-      .eq("wallet_address", walletAddress)
-      .eq("status", "ACTIVE")
+      .from("users")
+      .select(
+        `
+      id,
+      wallet_address,
+      whitelist:gov_whitelist!user_id (
+        id,
+        status,
+        added_at
+      )
+    `
+      )
+      .eq("id", userId)
+      .eq("whitelist.status", "ACTIVE")
       .single();
 
     if (error) {

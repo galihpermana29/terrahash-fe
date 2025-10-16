@@ -8,7 +8,7 @@
 import { useEffect } from "react";
 import { useAccount, useDisconnect } from "wagmi";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { message } from "antd";
+import { App } from "antd";
 import type { User } from "@/lib/types/user";
 import {
   checkWallet,
@@ -24,6 +24,7 @@ export function useAuth() {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const queryClient = useQueryClient();
+  const { message } = App.useApp();
 
   // Query: Fetch current user session on mount
   // This persists auth state across page refreshes

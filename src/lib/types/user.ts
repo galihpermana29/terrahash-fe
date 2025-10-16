@@ -1,4 +1,4 @@
-export type UserType = "PUBLIC" | "GOV";
+export type UserType = "PUBLIC" | "GOV" | "ROOT";
 
 export interface User {
   id: string; // PK

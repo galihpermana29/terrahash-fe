@@ -1,6 +1,6 @@
 /**
  * Auth Client Actions
- * 
+ *
  * API functions for authentication
  * Used by useAuth hook and other client components
  */
@@ -18,8 +18,8 @@ export interface LoginData {
  * Check if wallet exists in database
  */
 export const checkWallet = async (address: string) => {
-  const response = await fetch(`/api/auth/check-wallet/${address}`);
-  if (!response.ok) throw new Error('Failed to check wallet');
+  const response = await fetch(`/api/auth/check-wallet?address=${address}`);
+  if (!response.ok) throw new Error("Failed to check wallet");
   return response.json();
 };
 
@@ -27,12 +27,12 @@ export const checkWallet = async (address: string) => {
  * Login user with wallet address
  */
 export const loginUser = async (data: LoginData) => {
-  const response = await fetch('/api/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const response = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error('Login failed');
+  if (!response.ok) throw new Error("Login failed");
   return response.json();
 };
 
@@ -40,12 +40,12 @@ export const loginUser = async (data: LoginData) => {
  * Register new user
  */
 export const registerUser = async (data: RegisterData) => {
-  const response = await fetch('/api/auth/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const response = await fetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error('Registration failed');
+  if (!response.ok) throw new Error("Registration failed");
   return response.json();
 };
 
@@ -53,10 +53,10 @@ export const registerUser = async (data: RegisterData) => {
  * Logout current user
  */
 export const logoutUser = async () => {
-  const response = await fetch('/api/auth/logout', {
-    method: 'POST',
+  const response = await fetch("/api/auth/logout", {
+    method: "POST",
   });
-  if (!response.ok) throw new Error('Logout failed');
+  if (!response.ok) throw new Error("Logout failed");
   return response.json();
 };
 
@@ -64,10 +64,10 @@ export const logoutUser = async () => {
  * Get current authenticated user
  */
 export const getCurrentUser = async () => {
-  const response = await fetch('/api/auth/me');
+  const response = await fetch("/api/auth/me");
   if (!response.ok) {
     if (response.status === 401) return null;
-    throw new Error('Failed to get current user');
+    throw new Error("Failed to get current user");
   }
   return response.json();
 };
@@ -76,10 +76,10 @@ export const getCurrentUser = async () => {
  * Get current session (checks if user is authenticated)
  */
 export const getSession = async () => {
-  const response = await fetch('/api/auth/session');
+  const response = await fetch("/api/auth/session");
   if (!response.ok) {
     if (response.status === 401) return null;
-    throw new Error('Failed to get session');
+    throw new Error("Failed to get session");
   }
   return response.json();
 };

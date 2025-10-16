@@ -4,11 +4,12 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Spin } from 'antd';
+import { User } from '@/lib/types/user';
 
 interface AuthGuardProps {
   children: React.ReactNode;
   requireAuth?: boolean;
-  requiredUserType?: 'PUBLIC' | 'GOV';
+  requiredUserType?: User['type'];
   redirectTo?: string;
   fallback?: React.ReactNode;
 }
@@ -68,6 +69,8 @@ export default function AuthGuard({
         router.push('/gov'); // GOV users go to their dashboard
       } else if (userType === 'PUBLIC') {
         router.push('/dashboard'); // PUBLIC users go to their dashboard
+      } else if (userType === 'ROOT') {
+        router.push('/root-admin'); // ROOT users go to their dashboard
       } else {
         router.push(redirectTo); // Fallback
       }
