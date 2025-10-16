@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import WalletProvider from "@/components/wallet/WalletProvider";
+import QueryProvider from "@/components/providers/QueryProvider";
+import { AuthProvider } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import "./globals.css";
 
@@ -27,12 +29,16 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
         <AntdRegistry>
-          <WalletProvider>
-            <Navbar />
-            <Suspense>
-              {children}
-            </Suspense>
-          </WalletProvider>
+          <QueryProvider>
+            <WalletProvider>
+              <AuthProvider>
+                <Navbar />
+                <Suspense>
+                  {children}
+                </Suspense>
+              </AuthProvider>
+            </WalletProvider>
+          </QueryProvider>
         </AntdRegistry>
       </body>
     </html>
