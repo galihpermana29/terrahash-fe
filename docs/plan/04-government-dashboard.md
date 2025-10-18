@@ -70,38 +70,34 @@ Dashboard for GOV users to review submissions, manage parcels, and oversee marke
   - [ ] Pagination
 
 #### Parcel Management Section
-- [ ] **ParcelManagementList** component
-  - [ ] Fetch all parcels
-  - [ ] Display table with:
-    - [ ] Parcel ID
-    - [ ] Owner name (if owned)
-    - [ ] Status (UNCLAIMED/OWNED)
-    - [ ] Location
-    - [ ] Area (acres)
-    - [ ] Last updated
-    - [ ] Actions: View, Edit, Change Status
-  - [ ] Filter by status, location
-  - [ ] Search by parcel ID or owner
-  - [ ] Pagination
+- [x] **ParcelTable** component
+  - [x] Fetch all parcels (GOV only)
+  - [x] Display table with:
+    - [x] Parcel ID
+    - [x] Owner name (if owned)
+    - [x] Status (UNCLAIMED/OWNED) with color tags
+    - [x] Location (City, State, Country)
+    - [x] Area (m² and acres)
+    - [x] Created date
+    - [x] Actions: Edit, Toggle Status, Delete
+  - [x] Filter by status (table filters)
+  - [ ] Search by parcel ID or owner (TODO)
+  - [x] Pagination with page size
   
-- [ ] **AddParcelModal** component
-  - [ ] For GOV to manually add parcels (from paperwork)
-  - [ ] Draw boundary on map OR upload GeoJSON
-  - [ ] Form fields:
-    - [ ] Parcel ID (required, unique)
-    - [ ] Country, State, City
-    - [ ] Status (UNCLAIMED/OWNED)
-    - [ ] Owner (search user by wallet, optional)
-    - [ ] Notes
-  - [ ] Submit → POST /api/parcels
-  
-- [ ] **EditParcelModal** component
-  - [ ] Edit existing parcel
-  - [ ] Allow edit geometry (map drawing)
-  - [ ] Allow edit parcel_id, admin_region, notes
-  - [ ] Allow change status (UNCLAIMED ↔ OWNED)
-  - [ ] Allow change owner (search user)
-  - [ ] Submit → PATCH /api/parcels/:parcel_id
+- [x] **Add/Edit Parcel Page** (`/gov/parcel-management/manage`)
+  - [x] For GOV to manually add parcels (from paperwork)
+  - [x] Draw boundary on map with Leaflet + leaflet-draw
+  - [x] Form fields:
+    - [x] Parcel ID (auto-generated, read-only)
+    - [x] Country, State, City (auto-detected via reverse geocoding)
+    - [x] Status (UNCLAIMED/OWNED) radio buttons
+    - [x] Owner (wallet validation with "Check User" button)
+    - [x] Notes (textarea)
+  - [x] Submit → POST /api/parcels (create)
+  - [x] Submit → PATCH /api/parcels/:parcel_id (edit)
+  - [x] Map centered on Africa
+  - [x] Area validation (10 m² - 100,000 m²)
+  - [x] Auto-fill location from polygon center
   
 - [ ] **ChangeOwnershipModal** component
   - [ ] Quick action to change parcel status

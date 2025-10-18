@@ -82,7 +82,7 @@ export default function Navbar() {
 
                 const items: MenuProps['items'] = [
                   { key: 'network', label: 'Change Network' },
-                  { key: 'dashboard', label: <Link href="/dashboard">Dashboard</Link> },
+                  { key: 'dashboard', label: <Link href={user.type === 'GOV' ? '/gov' : '/dashboard'}>Dashboard</Link> },
                   { key: 'logout', label: 'Logout' },
                 ];
 

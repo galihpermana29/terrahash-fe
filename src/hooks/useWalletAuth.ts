@@ -25,24 +25,35 @@ export function useWalletAuth() {
 
   // Track which addresses we've already checked to prevent re-checking
   const checkedAddresses = useRef<Set<string>>(new Set());
+  // Track if user manually logged out to prevent auto-login
+  const hasLoggedOut = useRef<boolean>(false);
 
   // Auto-check and authenticate when wallet connects
   useEffect(() => {
     if (isConnected && address && !isAuthenticated && !isLoading) {
-      // Only check if we haven't checked this address yet
-      if (!checkedAddresses.current.has(address.toLowerCase())) {
+      // Only check if we haven't checked this address yet AND user didn't just logout
+      if (!checkedAddresses.current.has(address.toLowerCase()) && !hasLoggedOut.current) {
         checkedAddresses.current.add(address.toLowerCase());
         handleWalletConnection(address);
       }
     } else if (!isConnected) {
       // Reset state when wallet disconnects
       checkedAddresses.current.clear();
+      hasLoggedOut.current = false; // Reset logout flag when wallet disconnects
       setWalletAuthState({
         needsRegistration: false,
         isCheckingAuth: false,
       });
     }
   }, [isConnected, address, isAuthenticated, isLoading]);
+
+  // Detect when user logs out (was authenticated, now not authenticated, but wallet still connected)
+  useEffect(() => {
+    if (!isAuthenticated && isConnected && address) {
+      // User logged out while wallet is still connected
+      hasLoggedOut.current = true;
+    }
+  }, [isAuthenticated, isConnected, address]);
 
   const handleWalletConnection = async (walletAddress: string) => {
     try {
