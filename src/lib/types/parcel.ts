@@ -19,6 +19,14 @@ export interface AdminRegion {
   city: string;
 }
 
+// Listing data (from listings table)
+export interface Listing {
+  type: "SALE" | "LEASE";
+  price_kes: number;
+  active: boolean;
+  description?: string;
+}
+
 // Full parcel data
 export interface Parcel {
   parcel_id: string;
@@ -28,6 +36,7 @@ export interface Parcel {
   area_m2: number;
   admin_region: AdminRegion;
   notes?: string;
+  asset_url?: string[] | null; // Array of image URLs
   created_at?: string;
   updated_at?: string;
   owner?: {
@@ -35,6 +44,7 @@ export interface Parcel {
     full_name: string;
     wallet_address: string;
   } | null;
+  listing?: Listing | null; // LEFT JOIN from listings table
 }
 
 // Form payload for create/update
@@ -46,6 +56,7 @@ export interface ParcelFormPayload {
   status: ParcelStatus;
   owner_id?: string;
   notes?: string;
+  asset_url?: string[];
 }
 
 // Owner validation response

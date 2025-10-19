@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { GButton, GTable } from "@gal-ui/components";
+import { GButton, GDropdownButton, GTable } from "@gal-ui/components";
 import { Tag, Popconfirm, Space } from "antd";
 import { useParcels } from "@/hooks/gov/useParcels";
 import type { Parcel } from "@/lib/types/parcel";
@@ -31,7 +31,7 @@ const ParcelManagementPage = () => {
 
   const handleToggleStatus = async (parcel: Parcel) => {
     const newStatus = parcel.status === "UNCLAIMED" ? "OWNED" : "UNCLAIMED";
-    
+
     // If changing to OWNED, would need owner selection - for now just show message
     if (newStatus === "OWNED") {
       // TODO: Open modal to select owner
@@ -120,51 +120,29 @@ const ParcelManagementPage = () => {
       key: "actions",
       width: 200,
       fixed: "right" as const,
-      render: (_: any, record: Parcel) => (
-        <Space size="small">
-          <GButton
-            btn_type="secondary-gray"
-            onClick={() =>
-              router.push(`/gov/parcel-management/manage?parcel_id=${record.parcel_id}`)
-            }
-          >
-            Edit
-          </GButton>
-          <Popconfirm
-            title={`Change status to ${record.status === "UNCLAIMED" ? "OWNED" : "UNCLAIMED"}?`}
-            description={
-              record.status === "OWNED"
-                ? "This will remove the current owner"
-                : "You'll need to assign an owner via Edit"
-            }
-            onConfirm={() => handleToggleStatus(record)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <GButton
-              btn_type="secondary-gray"
-              loading={isTogglingStatus}
-            >
-              Toggle
-            </GButton>
-          </Popconfirm>
-          <Popconfirm
-            title="Delete parcel?"
-            description="This action cannot be undone"
-            onConfirm={() => handleDelete(record.parcel_id)}
-            okText="Delete"
-            okType="danger"
-            cancelText="Cancel"
-          >
-            <GButton
-              btn_type="secondary-gray"
-              loading={isDeleting}
-            >
-              Delete
-            </GButton>
-          </Popconfirm>
-        </Space>
-      ),
+      render: (_: any, record: Parcel) => {
+        return (
+          <GDropdownButton
+            menu={{
+              items: [
+                {
+                  key: "edit",
+                  label: "Edit",
+                  onClick: () => {
+                    router.push(`/gov/parcel-management/manage?parcel_id=${record.parcel_id}`)
+                  }
+                }, {
+                  key: "delete",
+                  label: "Delete",
+                  onClick: () => {
+                    handleDelete(record.parcel_id)
+                  }
+                }
+              ]
+            }}
+          />
+        )
+      }
     },
   ];
 

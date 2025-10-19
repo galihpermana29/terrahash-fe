@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { parcel_id, geometry_geojson, area_m2, admin_region, status, owner_id, notes } = body;
+    const { parcel_id, geometry_geojson, area_m2, admin_region, status, owner_id, notes, asset_url } = body;
 
     // Validate required fields
     if (!parcel_id || !geometry_geojson || !area_m2 || !admin_region || !status) {
@@ -122,6 +122,7 @@ export async function POST(request: NextRequest) {
         status,
         owner_id: status === "OWNED" ? owner_id : null,
         notes,
+        asset_url: asset_url || null,
       })
       .select(`
         *,

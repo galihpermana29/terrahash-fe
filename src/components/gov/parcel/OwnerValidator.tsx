@@ -38,7 +38,7 @@ export default function OwnerValidator({
 
     try {
       const result = await checkWallet(value);
-
+      console.log(result, '>')
       if (result.success && result.data.exists) {
         const user = result.data.user;
         setValidationStatus({

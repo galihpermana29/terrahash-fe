@@ -83,7 +83,7 @@ export async function PATCH(
 
     const { parcel_id } = await params;
     const body = await request.json();
-    const { geometry_geojson, area_m2, admin_region, status, owner_id, notes } = body;
+    const { geometry_geojson, area_m2, admin_region, status, owner_id, notes, asset_url } = body;
 
     // Build update object (only include provided fields)
     const updateData: any = {};
@@ -124,6 +124,9 @@ export async function PATCH(
     }
     if (notes !== undefined) {
       updateData.notes = notes;
+    }
+    if (asset_url !== undefined) {
+      updateData.asset_url = asset_url;
     }
 
     updateData.updated_at = new Date().toISOString();

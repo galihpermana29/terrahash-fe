@@ -1,78 +1,101 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Card, Typography, Button, Select } from "antd";
+import { useState } from "react";
+import { Card, Typography, Button, Select, Spin } from "antd";
 import { GInput } from "@gal-ui/components";
 import dynamic from "next/dynamic";
 import MapLegend from "@/components/map/MapLegend";
-import type { ParcelFC } from "@/lib/types/parcel";
-import raw from "@/data/parcels.mock.json";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
-import { USERS } from "@/data/users.mock";
-import { LISTINGS } from "@/data/listings.mock";
+import { usePublicParcels } from "@/hooks/usePublicParcels";
+import ParcelCard from "@/components/parcel/ParcelCard";
 
-const data = raw as ParcelFC;
 // Dynamic import to disable SSR for Leaflet-based component
 const ParcelMap = dynamic(() => import("@/components/map/ParcelMap"), {
   ssr: false,
 });
-const ALL = ["UNCLAIMED", "OWNED"] as const;
-
-// Using mock data from /data folder
 
 export default function MapPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const initialQ = (searchParams?.get("q") || "").trim();
-  const initialStatus = (searchParams?.get("status") || "ALL").toUpperCase();
+  const initialStatus = (searchParams?.get("status") || "ALL").toUpperCase() as "ALL" | "UNCLAIMED" | "OWNED";
+  const initialListingType = (searchParams?.get("listing_type") || "ALL").toUpperCase() as "ALL" | "SALE" | "LEASE";
 
   const [query, setQuery] = useState(initialQ);
-  const [statusSelect, setStatusSelect] = useState<string>(
-    ["ALL", ...ALL].includes(initialStatus as any) ? initialStatus : "ALL"
-  );
-  const [statuses, setStatuses] = useState<string[]>(
-    initialStatus === "ALL" ? [...ALL] : [initialStatus]
-  );
+  const [statusSelect, setStatusSelect] = useState<"ALL" | "UNCLAIMED" | "OWNED">(initialStatus);
+  const [listingTypeSelect, setListingTypeSelect] = useState<"ALL" | "SALE" | "LEASE">(initialListingType);
+
+  // Fetch parcels with filters
+  const { data: parcels = [], isLoading, error } = usePublicParcels({
+    q: query,
+    status: statusSelect,
+    listing_type: listingTypeSelect,
+  });
 
   const statusOptions = [
-    { value: "ALL", label: "All" },
+    { value: "ALL", label: "All Status" },
     { value: "UNCLAIMED", label: "Unclaimed" },
     { value: "OWNED", label: "Owned" },
   ];
 
-  const selected = useMemo(() => new Set(statuses), [statuses]);
+  const listingTypeOptions = [
+    { value: "ALL", label: "All Listings" },
+    { value: "SALE", label: "For Sale" },
+    { value: "LEASE", label: "For Lease" },
+  ];
 
-  const filtered = useMemo(() => {
-    return (data.features || []).filter((f: any) => {
-      const statusOk = selected.has(f?.properties?.status);
-      const q = query?.trim().toLowerCase();
-      const queryOk = !q || f?.properties?.parcel_id?.toLowerCase().includes(q);
-      return statusOk && queryOk;
-    });
-  }, [data, selected, query]);
+  // Convert parcels to GeoJSON for map
+  const mapData = {
+    type: "FeatureCollection" as const,
+    features: parcels.map((parcel) => {
+      // Parse the geometry_geojson which is a full GeoJSON Feature
+      const feature = JSON.parse(parcel.geometry_geojson);
+      
+      // Return the feature with updated properties
+      return {
+        type: "Feature" as const,
+        geometry: feature.geometry || feature, // Handle both Feature and Geometry formats
+        properties: {
+          parcel_id: parcel.parcel_id,
+          status: parcel.status,
+          area_m2: parcel.area_m2,
+          owner_id: parcel.owner_id,
+          updated_at: parcel.updated_at,
+        },
+      };
+    }),
+  };
 
-  const toAcres = (m2: number) => (m2 ? (m2 / 4046.8564224).toFixed(1) : "-");
-
-  const updateUrl = (nextQ: string, nextStatus: string) => {
+  const updateUrl = (nextQ: string, nextStatus: string, nextListingType: string) => {
     const params = new URLSearchParams();
     if (nextQ?.trim()) params.set("q", nextQ.trim());
     params.set("status", nextStatus);
+    if (nextStatus === "OWNED" && nextListingType !== "ALL") {
+      params.set("listing_type", nextListingType);
+    }
     const qs = params.toString();
     router.replace(`/map${qs ? `?${qs}` : ""}`);
   };
 
   const handleQueryChange = (val: string) => {
     setQuery(val);
-    updateUrl(val, statusSelect);
+    updateUrl(val, statusSelect, listingTypeSelect);
   };
 
-  const handleStatusChange = (value: string) => {
+  const handleStatusChange = (value: "ALL" | "UNCLAIMED" | "OWNED") => {
     setStatusSelect(value);
-    setStatuses(value === "ALL" ? [...ALL] : [value]);
-    updateUrl(query, value);
+    // Reset listing type when changing status
+    if (value !== "OWNED") {
+      setListingTypeSelect("ALL");
+    }
+    updateUrl(query, value, "ALL");
+  };
+
+  const handleListingTypeChange = (value: "ALL" | "SALE" | "LEASE") => {
+    setListingTypeSelect(value);
+    updateUrl(query, statusSelect, value);
   };
 
   return (
@@ -88,7 +111,7 @@ export default function MapPage() {
         <Card className="mb-3">
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
             <GInput
-              placeholder="Search by Parcel ID (e.g., TH-0001)"
+              placeholder="Search by Parcel ID, Country, State, or City"
               value={query}
               onChange={(e: any) => handleQueryChange(e?.target?.value || "")}
             />
@@ -99,73 +122,75 @@ export default function MapPage() {
               onChange={handleStatusChange}
               options={statusOptions}
             />
+            <Select
+              size="large"
+              className="w-full sm:w-56"
+              value={listingTypeSelect}
+              onChange={handleListingTypeChange}
+              options={listingTypeOptions}
+              disabled={statusSelect !== "OWNED"}
+            />
           </div>
         </Card>
 
-        <div className="relative">
-          <ParcelMap data={data} filterStatuses={statuses as any} query={query} />
-          <MapLegend />
-        </div>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex justify-center items-center h-64">
+            <Spin size="large" />
+          </div>
+        )}
 
-        {/* Results List (Landing-style cards) */}
-        <section className="mt-6 pb-10">
-          <div className="flex items-end justify-between mb-3">
-            <Typography.Title level={4} className="!mb-0">Results ({filtered.length})</Typography.Title>
-            <Typography.Text type="secondary">Showing filtered parcels below the map</Typography.Text>
+        {/* Error State */}
+        {error && (
+          <div className="text-center text-red-500 py-8">
+            Error loading parcels. Please try again.
           </div>
-          <div className="grid md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-6">
-            {filtered.map((f: any, idx: number) => {
-              const id = f.properties.parcel_id;
-              const status = f.properties.status;
-              const area = toAcres(f.properties.area_m2);
-              const updated = new Date(f.properties.updated_at).toLocaleDateString();
-              const owner = f.properties.owner_id ? USERS[f.properties.owner_id] : undefined;
-              const listing = LISTINGS[id];
-              const image = [
-                'https://res.cloudinary.com/dqipjpy1w/image/upload/v1760192851/murad-swaleh-7tDidSXbgD8-unsplash_hn17iq.jpg',
-                'https://res.cloudinary.com/dqipjpy1w/image/upload/v1760192855/sam-szuchan-_wqjX4MauzA-unsplash_u4almv.jpg',
-                'https://res.cloudinary.com/dqipjpy1w/image/upload/v1760192859/fabricio-sakai-oyQD2wngBDM-unsplash_uamshk.jpg',
-              ][idx % 3];
-              const priceKes = (listing?.price_kes ?? (25000 + (idx % 3) * 5000));
-              return (
-                <div key={id} className="rounded-xl border border-gray-200 bg-cream shadow-sm overflow-hidden">
-                  <div className="relative h-40">
-                    <Image src={image} alt={id} fill className="object-cover" />
-                    <div className="absolute top-3 left-3 flex gap-2">
-                      <span className="text-xs px-2 py-1 rounded-full bg-brand-gold text-text-dark shadow">
-                        {status}
-                      </span>
-                      {listing?.active && (
-                        <span className="text-xs px-2 py-1 rounded-full bg-white text-gray-700 shadow border border-gray-200">
-                          {listing.type}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-brand-primary">{id}</h3>
-                      <span className="text-brand-gold font-medium">KES {priceKes.toLocaleString()}</span>
-                    </div>
-                    <p className="mt-1 text-sm text-gray-600">Kenya • {area} acres</p>
-                    <p className="text-xs text-gray-600">
-                      Owner: {owner ? (owner.type === 'GOV' ? 'GOV' : owner.full_name || 'Public') : 'Unclaimed'}
-                    </p>
-                    <p className="text-xs text-gray-500">Updated: {updated}</p>
-                    <div className="mt-4 flex gap-2">
-                      <Link href={`/map?q=${id}`} className="inline-flex">
-                        <button className="h-10 px-4 rounded-full bg-brand-primary text-white hover:bg-brand-primary-dark">View on Map</button>
-                      </Link>
-                      <Link href={`/map?q=${id}`} className="inline-flex">
-                        <button className="h-10 px-4 rounded-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">Details</button>
-                      </Link>
-                    </div>
-                  </div>
+        )}
+
+        {/* Map */}
+        {!isLoading && !error && (
+          <>
+            <div className="relative">
+              <ParcelMap 
+                data={mapData} 
+                filterStatuses={statusSelect === "ALL" ? ["UNCLAIMED", "OWNED"] : [statusSelect]} 
+                query={query} 
+              />
+              <MapLegend />
+            </div>
+
+            {/* Results List */}
+            <section className="mt-6 pb-10">
+              <div className="flex items-end justify-between mb-3">
+                <Typography.Title level={4} className="!mb-0">
+                  Results ({parcels.length})
+                </Typography.Title>
+                <Typography.Text type="secondary">
+                  Showing filtered parcels below the map
+                </Typography.Text>
+              </div>
+
+              {parcels.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  No parcels found matching your criteria.
                 </div>
-              );
-            })}
-          </div>
-        </section>
+              ) : (
+                <div className="grid md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-6">
+                  {parcels.map((parcel) => (
+                    <ParcelCard
+                      key={parcel.parcel_id}
+                      parcel={parcel}
+                      onViewMap={() => {
+                        setQuery(parcel.parcel_id);
+                        updateUrl(parcel.parcel_id, statusSelect, listingTypeSelect);
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        )}
       </div>
     </div>
   );

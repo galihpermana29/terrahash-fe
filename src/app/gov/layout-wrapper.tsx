@@ -9,6 +9,10 @@ function GovLayoutWrapper({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
+
+  const activeKey = pathname.split('/').pop() || "parcel-management";
+
+
   const items = [
 
     {
@@ -53,7 +57,7 @@ function GovLayoutWrapper({ children }: { children: React.ReactNode }) {
           <p className="text-gray-600 mt-2">Welcome, {user?.full_name}</p>
         </div>
 
-        <Tabs defaultActiveKey={pathname.split('/').pop() || "parcel-management"} items={items} onChange={(key) => {
+        <Tabs defaultActiveKey={activeKey} items={items} onChange={(key) => {
           router.push(`/gov/${key}`);
         }} />
         {children}

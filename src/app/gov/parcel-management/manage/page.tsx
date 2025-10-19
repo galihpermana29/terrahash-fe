@@ -8,6 +8,7 @@ import {
 import { Suspense, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import OwnerValidator from "@/components/gov/parcel/OwnerValidator";
+import DraggerUpload from "@/components/uploader/Multiuploader";
 
 const ParcelMapDrawer = dynamic(
   () => import("@/components/gov/parcel/ParcelMapDrawer"),
@@ -16,6 +17,7 @@ const ParcelMapDrawer = dynamic(
 import { useParcelForm } from "@/hooks/gov/useParcelForm";
 import { useParcels, useParcelDetail } from "@/hooks/gov/useParcels";
 import AuthGuard from "@/components/auth/AuthGuard";
+import { useWatch } from "antd/es/form/Form";
 
 // Countries in Africa (sample list)
 const AFRICAN_COUNTRIES = [
@@ -70,6 +72,8 @@ function ManageParcelContent() {
     isEditMode ? parcelId : null
   );
 
+  const asset_url = useWatch('asset_url', form);
+
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [selectedState, setSelectedState] = useState<string>("");
   const [status, setStatus] = useState<"UNCLAIMED" | "OWNED">("UNCLAIMED");
@@ -81,7 +85,7 @@ function ManageParcelContent() {
     if (isEditMode && existingParcel && !isDataLoaded) {
       // Parse geometry from string
       const geometry = JSON.parse(existingParcel.geometry_geojson);
-      
+
       // Set form values
       form.setFieldsValue({
         parcel_id: existingParcel.parcel_id,
@@ -91,6 +95,7 @@ function ManageParcelContent() {
         status: existingParcel.status,
         notes: existingParcel.notes || "",
         owner_wallet: existingParcel.owner?.wallet_address || "",
+        asset_url: existingParcel.asset_url || [],
       });
 
       // Set local state
@@ -100,6 +105,9 @@ function ManageParcelContent() {
 
       // Store geometry to pass to map
       setLoadedGeometry(geometry);
+
+      // Set geometry in form state (important for edit mode validation)
+      handleGeometryChange(geometry, existingParcel.area_m2);
 
       // If has owner, set owner data
       if (existingParcel.owner) {
@@ -154,7 +162,7 @@ function ManageParcelContent() {
 
   const handleSubmit = async (values: any) => {
     const payload = buildFormPayload(values);
-    
+
     if (!payload) {
       return;
     }
@@ -319,6 +327,7 @@ function ManageParcelContent() {
                   },
                   {
                     validator: (_, value) => {
+                      console.log(status, ownerId, '?')
                       if (status === "OWNED" && !ownerId) {
                         return Promise.reject(
                           "Please check if the wallet address is valid"
@@ -342,6 +351,21 @@ function ManageParcelContent() {
                 customSize="xl"
                 placeholder="Additional information, paperwork reference, etc."
                 rows={4}
+              />
+            </Form.Item>
+
+            {/* Asset Images */}
+            <Form.Item
+              label="Parcel Images (Optional)"
+              name="asset_url"
+              tooltip="Upload images of the parcel (land photos, documents, etc.)"
+            >
+              <DraggerUpload
+                profileImageURL={asset_url}
+                formItemName="asset_url"
+                form={form}
+                limit={5}
+                multiple={true}
               />
             </Form.Item>
           </div>

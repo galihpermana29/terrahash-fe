@@ -37,16 +37,16 @@ export async function GET(request: NextRequest) {
       message: "Wallet checked successfully",
     });
   }
-  console.log(loweredAddress, "checking address?");
   try {
     const { data: user, error } = await supabaseServer
       .from("users")
       .select("*")
-      .eq("wallet_address", loweredAddress);
+      .eq("wallet_address", loweredAddress)
+      .single();
     if (error) throw error;
     return successResponse({
       user,
-      exists: user.length > 0,
+      exists: user ? true : false,
       message: "Wallet checked successfully",
     });
   } catch (error) {
