@@ -21,10 +21,18 @@ export interface AdminRegion {
 
 // Listing data (from listings table)
 export interface Listing {
+  id: string;
+  parcel_id: string;
   type: "SALE" | "LEASE";
-  price_kes: number;
-  active: boolean;
+  price_kes: number; // For SALE: one-time price. For LEASE: price per month
+  lease_period?: "1_MONTH" | "6_MONTHS" | "12_MONTHS"; // Required for LEASE type
   description?: string;
+  terms?: string;
+  contact_phone?: string;
+  tx_hash?: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 // Full parcel data

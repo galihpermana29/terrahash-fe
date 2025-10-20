@@ -23,6 +23,18 @@ export async function GET(
           id,
           full_name,
           wallet_address
+        ),
+        listing:listings (
+          id,
+          type,
+          price_kes,
+          lease_period,
+          description,
+          terms,
+          contact_phone,
+          active,
+          created_at,
+          updated_at
         )
       `)
       .eq("parcel_id", parcel_id)
@@ -43,9 +55,18 @@ export async function GET(
       );
     }
 
+    // Normalize listing data (Supabase returns array, we want single object or null)
+    const normalizedParcel = {
+      ...parcel,
+      listing:
+        parcel.listing && parcel.listing.length > 0
+          ? parcel.listing[0]
+          : null,
+    };
+
     return NextResponse.json({
       success: true,
-      data: { parcel },
+      data: { parcel: normalizedParcel },
     });
   } catch (error) {
     console.error("Error in GET /api/parcels/:parcel_id:", error);

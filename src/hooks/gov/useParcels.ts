@@ -10,7 +10,11 @@ import {
 } from "@/client-action/parcel";
 import type { ParcelFormPayload } from "@/lib/types/parcel";
 
-export function useParcels(params?: { status?: "UNCLAIMED" | "OWNED"; search?: string }) {
+export function useParcels(params?: {
+  status?: "UNCLAIMED" | "OWNED";
+  search?: string;
+  userId?: string;
+}) {
   const queryClient = useQueryClient();
   const { message } = App.useApp();
 
@@ -43,8 +47,13 @@ export function useParcels(params?: { status?: "UNCLAIMED" | "OWNED"; search?: s
 
   // Mutation: Update parcel
   const updateMutation = useMutation({
-    mutationFn: ({ parcelId, data }: { parcelId: string; data: Partial<ParcelFormPayload> }) =>
-      updateParcel(parcelId, data),
+    mutationFn: ({
+      parcelId,
+      data,
+    }: {
+      parcelId: string;
+      data: Partial<ParcelFormPayload>;
+    }) => updateParcel(parcelId, data),
     onSuccess: (data) => {
       if (data.success) {
         message.success("Parcel updated successfully!");

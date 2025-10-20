@@ -56,6 +56,17 @@ export async function POST(request: NextRequest) {
   try {
     const { wallet_address, full_name } = await request.json();
 
+    // check is wallet already in user table
+    const { data: userExist, error: userExistError } = await supabaseServer
+      .from("users")
+      .select("*")
+      .eq("wallet_address", wallet_address?.toLowerCase())
+      .single();
+
+    if (userExist) {
+      return errorResponse("USER_EXISTS", "User already exists", null, 400);
+    }
+
     // add user to table
     const { data: user, error: userError } = await supabaseServer
       .from("users")

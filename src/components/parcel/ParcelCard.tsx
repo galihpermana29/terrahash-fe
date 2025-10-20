@@ -37,6 +37,32 @@ export default function ParcelCard({
   const hasListing = parcel.listing && parcel.listing.active;
   const listingPrice = hasListing ? parcel.listing!.price_kes : null;
   const listingType = hasListing ? parcel.listing!.type : null;
+  const leasePeriod = hasListing && listingType === "LEASE" ? parcel.listing!.lease_period : null;
+
+  // Calculate display price for lease
+  const getDisplayPrice = () => {
+    if (!hasListing || !listingPrice) return null;
+    
+    if (listingType === "SALE") {
+      return `KES ${listingPrice.toLocaleString()}`;
+    }
+    
+    // For LEASE, show per month
+    return `KES ${listingPrice.toLocaleString()}/mo`;
+  };
+
+  // Get lease period label
+  const getLeasePeriodLabel = () => {
+    if (!leasePeriod) return "";
+    
+    const labels = {
+      "1_MONTH": "Monthly",
+      "6_MONTHS": "Every 6 months",
+      "12_MONTHS": "Yearly",
+    };
+    
+    return labels[leasePeriod];
+  };
 
   return (
     <div className="rounded-xl border border-gray-200 bg-cream shadow-sm overflow-hidden hover:shadow-md transition-shadow">
@@ -69,12 +95,19 @@ export default function ParcelCard({
           <h3 className="font-semibold text-brand-primary">
             {parcel.parcel_id}
           </h3>
-          {listingPrice && (
+          {hasListing && (
             <span className="text-brand-gold font-medium">
-              KES {listingPrice.toLocaleString()}
+              {getDisplayPrice()}
             </span>
           )}
         </div>
+
+        {/* Lease Period (if applicable) */}
+        {listingType === "LEASE" && leasePeriod && (
+          <p className="text-xs text-blue-600 font-medium">
+            Payment: {getLeasePeriodLabel()}
+          </p>
+        )}
 
         {/* Location and Area */}
         <p className="mt-1 text-sm text-gray-600">
@@ -83,6 +116,13 @@ export default function ParcelCard({
 
         {/* Owner */}
         <p className="text-xs text-gray-600">Owner: {ownerName}</p>
+
+        {/* Contact Phone (if listing has it) */}
+        {hasListing && parcel.listing!.contact_phone && (
+          <p className="text-xs text-gray-600">
+            Contact: {parcel.listing!.contact_phone}
+          </p>
+        )}
 
         {/* Updated Date */}
         <p className="text-xs text-gray-500">Updated: {updatedDate}</p>

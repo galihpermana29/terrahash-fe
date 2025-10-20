@@ -14,17 +14,32 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status"); // UNCLAIMED or OWNED
     const search = searchParams.get("search"); // Search by parcel_id
+    const userId = searchParams.get("user_id"); // Search by user_id
 
     let query = supabaseServer
       .from("parcels")
-      .select(`
+      .select(
+        `
         *,
         owner:users!owner_id (
           id,
           full_name,
           wallet_address
+        ),
+        listing:listings (
+          id,
+          type,
+          price_kes,
+          lease_period,
+          description,
+          terms,
+          contact_phone,
+          active,
+          created_at,
+          updated_at
         )
-      `)
+      `
+      )
       .order("created_at", { ascending: false });
 
     // Apply filters
@@ -36,24 +51,43 @@ export async function GET(request: NextRequest) {
       query = query.ilike("parcel_id", `%${search}%`);
     }
 
+    if (userId) {
+      query = query.eq("owner_id", userId);
+    }
+
     const { data: parcels, error } = await query;
 
     if (error) {
       console.error("Error fetching parcels:", error);
       return NextResponse.json(
-        { success: false, error: { code: "DATABASE_ERROR", message: error.message } },
+        {
+          success: false,
+          error: { code: "DATABASE_ERROR", message: error.message },
+        },
         { status: 500 }
       );
     }
 
+    // Normalize listing data (Supabase returns array, we want single object or null)
+    const normalizedParcels = (parcels || []).map((parcel: any) => ({
+      ...parcel,
+      listing:
+        parcel.listing && parcel.listing.length > 0
+          ? parcel.listing[0]
+          : null,
+    }));
+
     return NextResponse.json({
       success: true,
-      data: { parcels },
+      data: { parcels: normalizedParcels },
     });
   } catch (error) {
     console.error("Error in GET /api/parcels:", error);
     return NextResponse.json(
-      { success: false, error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      {
+        success: false,
+        error: { code: "INTERNAL_ERROR", message: "Internal server error" },
+      },
       { status: 500 }
     );
   }
@@ -69,25 +103,55 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { success: false, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
+        {
+          success: false,
+          error: { code: "UNAUTHORIZED", message: "Not authenticated" },
+        },
         { status: 401 }
       );
     }
 
     if (user.type !== "GOV") {
       return NextResponse.json(
-        { success: false, error: { code: "FORBIDDEN", message: "Only GOV users can create parcels" } },
+        {
+          success: false,
+          error: {
+            code: "FORBIDDEN",
+            message: "Only GOV users can create parcels",
+          },
+        },
         { status: 403 }
       );
     }
 
     const body = await request.json();
-    const { parcel_id, geometry_geojson, area_m2, admin_region, status, owner_id, notes, asset_url } = body;
+    const {
+      parcel_id,
+      geometry_geojson,
+      area_m2,
+      admin_region,
+      status,
+      owner_id,
+      notes,
+      asset_url,
+    } = body;
 
     // Validate required fields
-    if (!parcel_id || !geometry_geojson || !area_m2 || !admin_region || !status) {
+    if (
+      !parcel_id ||
+      !geometry_geojson ||
+      !area_m2 ||
+      !admin_region ||
+      !status
+    ) {
       return NextResponse.json(
-        { success: false, error: { code: "VALIDATION_ERROR", message: "Missing required fields" } },
+        {
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Missing required fields",
+          },
+        },
         { status: 400 }
       );
     }
@@ -95,7 +159,10 @@ export async function POST(request: NextRequest) {
     // Validate status
     if (!["UNCLAIMED", "OWNED"].includes(status)) {
       return NextResponse.json(
-        { success: false, error: { code: "VALIDATION_ERROR", message: "Invalid status" } },
+        {
+          success: false,
+          error: { code: "VALIDATION_ERROR", message: "Invalid status" },
+        },
         { status: 400 }
       );
     }
@@ -103,7 +170,13 @@ export async function POST(request: NextRequest) {
     // If status is OWNED, owner_id is required
     if (status === "OWNED" && !owner_id) {
       return NextResponse.json(
-        { success: false, error: { code: "VALIDATION_ERROR", message: "Owner is required for OWNED status" } },
+        {
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Owner is required for OWNED status",
+          },
+        },
         { status: 400 }
       );
     }
@@ -124,29 +197,40 @@ export async function POST(request: NextRequest) {
         notes,
         asset_url: asset_url || null,
       })
-      .select(`
+      .select(
+        `
         *,
         owner:users!owner_id (
           id,
           full_name,
           wallet_address
         )
-      `)
+      `
+      )
       .single();
 
     if (error) {
       console.error("Error creating parcel:", error);
-      
+
       // Check for unique constraint violation
       if (error.code === "23505") {
         return NextResponse.json(
-          { success: false, error: { code: "DUPLICATE_PARCEL", message: "Parcel ID already exists" } },
+          {
+            success: false,
+            error: {
+              code: "DUPLICATE_PARCEL",
+              message: "Parcel ID already exists",
+            },
+          },
           { status: 409 }
         );
       }
 
       return NextResponse.json(
-        { success: false, error: { code: "DATABASE_ERROR", message: error.message } },
+        {
+          success: false,
+          error: { code: "DATABASE_ERROR", message: error.message },
+        },
         { status: 500 }
       );
     }
@@ -158,7 +242,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error in POST /api/parcels:", error);
     return NextResponse.json(
-      { success: false, error: { code: "INTERNAL_ERROR", message: "Internal server error" } },
+      {
+        success: false,
+        error: { code: "INTERNAL_ERROR", message: "Internal server error" },
+      },
       { status: 500 }
     );
   }

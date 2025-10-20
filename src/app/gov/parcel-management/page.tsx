@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { GButton, GDropdownButton, GTable } from "@gal-ui/components";
-import { Tag, Popconfirm, Space } from "antd";
+import { GButton, GDropdownButton, GSelect, GTable } from "@gal-ui/components";
+import { Tag, } from "antd";
 import { useParcels } from "@/hooks/gov/useParcels";
 import type { Parcel } from "@/lib/types/parcel";
 import AuthGuard from "@/components/auth/AuthGuard";
@@ -11,7 +11,7 @@ import AuthGuard from "@/components/auth/AuthGuard";
 const ParcelManagementPage = () => {
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<"UNCLAIMED" | "OWNED" | undefined>();
-  const { parcels, isLoading, toggleStatus, deleteParcel, isTogglingStatus, isDeleting } = useParcels({
+  const { parcels, isLoading, deleteParcel } = useParcels({
     status: statusFilter,
   });
 
@@ -19,30 +19,27 @@ const ParcelManagementPage = () => {
     return (
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Parcel Management</h1>
-        <GButton
-          btn_type="primary"
-          onClick={() => router.push("/gov/parcel-management/manage")}
-        >
-          Add Parcel
-        </GButton>
+        <div className="flex items-center gap-2">
+          <GSelect customClassName="w-[100px]" customSize="xl" defaultValue={'All'} value={statusFilter} options={[
+            { value: "", label: "All" },
+            { value: "UNCLAIMED", label: "Unclaimed" },
+            { value: "OWNED", label: "Owned" },
+          ]} onChange={(value) => {
+            if (value === "") {
+              setStatusFilter(undefined);
+            } else {
+              setStatusFilter(value);
+            }
+          }} />
+          <GButton
+            btn_type="primary"
+            onClick={() => router.push("/gov/parcel-management/manage")}
+          >
+            Add Parcel
+          </GButton>
+        </div>
       </div>
     );
-  };
-
-  const handleToggleStatus = async (parcel: Parcel) => {
-    const newStatus = parcel.status === "UNCLAIMED" ? "OWNED" : "UNCLAIMED";
-
-    // If changing to OWNED, would need owner selection - for now just show message
-    if (newStatus === "OWNED") {
-      // TODO: Open modal to select owner
-      alert("Please use Edit to assign an owner");
-      return;
-    }
-
-    await toggleStatus({
-      parcelId: parcel.parcel_id,
-      status: newStatus,
-    });
   };
 
   const handleDelete = async (parcelId: string) => {

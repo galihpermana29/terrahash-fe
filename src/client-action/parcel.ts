@@ -7,12 +7,16 @@ import type { ApiResponse } from "@/lib/types/response";
 export async function getParcels(params?: {
   status?: "UNCLAIMED" | "OWNED";
   search?: string;
+  userId?: string;
 }): Promise<ApiResponse<{ parcels: Parcel[] }>> {
   const queryParams = new URLSearchParams();
   if (params?.status) queryParams.append("status", params.status);
   if (params?.search) queryParams.append("search", params.search);
+  if (params?.userId) queryParams.append("user_id", params.userId);
 
-  const url = `/api/parcels${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+  const url = `/api/parcels${
+    queryParams.toString() ? `?${queryParams.toString()}` : ""
+  }`;
 
   const response = await fetch(url, {
     method: "GET",
