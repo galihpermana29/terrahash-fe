@@ -160,7 +160,7 @@ export default function ParcelMap({ data, filterStatuses, query }: Props) {
   return (
     <div
       ref={containerRef}
-      style={{ height: "calc(100vh - 160px)", width: "100%" }}
+      style={{ height: "calc(100vh - 200px)", width: "100%" }}
     />
   );
 }

@@ -11,6 +11,11 @@ export interface ListingWithParcel extends Listing {
       city: string;
     };
     status: string;
+    owner?: {
+      id: string;
+      full_name: string;
+      wallet_address: string;
+    };
   };
 }
 
@@ -21,6 +26,19 @@ export async function getListings(): Promise<
   ApiResponse<{ listings: ListingWithParcel[]; count: number }>
 > {
   const response = await fetch("/api/listings", {
+    method: "GET",
+  });
+
+  return response.json();
+}
+
+/**
+ * Get all listings for government users
+ */
+export async function getGovernmentListings(): Promise<
+  ApiResponse<{ listings: ListingWithParcel[]; count: number }>
+> {
+  const response = await fetch("/api/listings/gov", {
     method: "GET",
   });
 

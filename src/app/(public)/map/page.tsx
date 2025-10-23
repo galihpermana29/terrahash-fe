@@ -52,7 +52,7 @@ export default function MapPage() {
     features: parcels.map((parcel) => {
       // Parse the geometry_geojson which is a full GeoJSON Feature
       const feature = JSON.parse(parcel.geometry_geojson);
-      
+
       // Return the feature with updated properties
       return {
         type: "Feature" as const,
@@ -99,39 +99,18 @@ export default function MapPage() {
   };
 
   return (
-    <div className="p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-          <Typography.Title level={3} className="!mb-0">Find Land</Typography.Title>
-          <Link href="/">
-            <Button type="link">Home</Button>
-          </Link>
-        </div>
+    <div className="">
 
-        <Card className="mb-3">
-          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-            <GInput
-              placeholder="Search by Parcel ID, Country, State, or City"
-              value={query}
-              onChange={(e: any) => handleQueryChange(e?.target?.value || "")}
-            />
-            <Select
-              size="large"
-              className="w-full sm:w-56"
-              value={statusSelect}
-              onChange={handleStatusChange}
-              options={statusOptions}
-            />
-            <Select
-              size="large"
-              className="w-full sm:w-56"
-              value={listingTypeSelect}
-              onChange={handleListingTypeChange}
-              options={listingTypeOptions}
-              disabled={statusSelect !== "OWNED"}
-            />
-          </div>
-        </Card>
+      <div className="relative">
+        <ParcelMap
+          data={mapData}
+          filterStatuses={statusSelect === "ALL" ? ["UNCLAIMED", "OWNED"] : [statusSelect]}
+          query={query}
+        />
+        <MapLegend />
+      </div>
+      <div className="max-w-7xl mx-auto p-4">
+
 
         {/* Loading State */}
         {isLoading && (
@@ -150,24 +129,38 @@ export default function MapPage() {
         {/* Map */}
         {!isLoading && !error && (
           <>
-            <div className="relative">
-              <ParcelMap 
-                data={mapData} 
-                filterStatuses={statusSelect === "ALL" ? ["UNCLAIMED", "OWNED"] : [statusSelect]} 
-                query={query} 
-              />
-              <MapLegend />
+            <div className="flex items-center justify-between gap-3 mb-4 flex-wrap mt-[25px]">
+              <Typography.Title level={3} className="!mb-0">Find Land</Typography.Title>
             </div>
 
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+              <GInput
+                placeholder="Search by Parcel ID, Country, State, or City"
+                value={query}
+                onChange={(e: any) => handleQueryChange(e?.target?.value || "")}
+              />
+              <Select
+                size="large"
+                className="w-full sm:w-56"
+                value={statusSelect}
+                onChange={handleStatusChange}
+                options={statusOptions}
+              />
+              <Select
+                size="large"
+                className="w-full sm:w-56"
+                value={listingTypeSelect}
+                onChange={handleListingTypeChange}
+                options={listingTypeOptions}
+                disabled={statusSelect !== "OWNED"}
+              />
+            </div>
             {/* Results List */}
             <section className="mt-6 pb-10">
               <div className="flex items-end justify-between mb-3">
                 <Typography.Title level={4} className="!mb-0">
                   Results ({parcels.length})
                 </Typography.Title>
-                <Typography.Text type="secondary">
-                  Showing filtered parcels below the map
-                </Typography.Text>
               </div>
 
               {parcels.length === 0 ? (

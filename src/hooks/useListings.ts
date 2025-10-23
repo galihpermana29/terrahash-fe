@@ -1,7 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { App } from "antd";
 import {
   getListings,
+  getGovernmentListings,
   createListing,
   updateListing,
   deleteListing,
@@ -23,7 +24,36 @@ export function useListings() {
     queryFn: async () => {
       const response = await getListings();
       if (!response.success) {
-        throw new Error(response.error?.message || "Failed to fetch listings");
+        message.error(response.error?.message || "Failed to fetch listings");
+        return { listings: [], count: 0 };
+      }
+      return response.data;
+    },
+  });
+
+  return {
+    listings: listingsData?.listings || [],
+    listingsCount: listingsData?.count || 0,
+    isLoading,
+    error,
+  };
+}
+
+export function useGovernmentListings() {
+  const queryClient = useQueryClient();
+  const { message } = App.useApp();
+
+  const {
+    data: listingsData,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["government-listings"],
+    queryFn: async () => {
+      const response = await getGovernmentListings();
+      if (!response.success) {
+        message.error(response.error?.message || "Failed to fetch government listings");
+        return { listings: [], count: 0 };
       }
       return response.data;
     },

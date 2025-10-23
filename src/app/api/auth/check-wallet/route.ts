@@ -42,10 +42,21 @@ export async function GET(request: NextRequest) {
       .from("users")
       .select("*")
       .eq("wallet_address", loweredAddress)
-      .single();
-    if (error) throw error;
+      .maybeSingle();
+
+    // maybeSingle() returns null if no rows found, doesn't throw error
+    if (error) {
+      console.error("Database error:", error);
+      return errorResponse(
+        "SERVER_ERROR",
+        error.message,
+        null,
+        500
+      );
+    }
+
     return successResponse({
-      user,
+      user: user || null,
       exists: user ? true : false,
       message: "Wallet checked successfully",
     });

@@ -25,19 +25,6 @@ export async function PATCH(
       );
     }
 
-    if (user.type !== "PUBLIC") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "FORBIDDEN",
-            message: "Only PUBLIC users can update listings",
-          },
-        },
-        { status: 403 }
-      );
-    }
-
     const { listing_id } = await params;
 
     // Get existing listing
@@ -79,8 +66,14 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { price_kes, lease_period, description, terms, contact_phone, active } =
-      body;
+    const {
+      price_kes,
+      lease_period,
+      description,
+      terms,
+      contact_phone,
+      active,
+    } = body;
 
     // Build update object
     const updateData: any = {
@@ -194,19 +187,6 @@ export async function DELETE(
           error: { code: "UNAUTHORIZED", message: "Not authenticated" },
         },
         { status: 401 }
-      );
-    }
-
-    if (user.type !== "PUBLIC") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "FORBIDDEN",
-            message: "Only PUBLIC users can delete listings",
-          },
-        },
-        { status: 403 }
       );
     }
 

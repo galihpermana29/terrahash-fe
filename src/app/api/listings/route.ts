@@ -4,8 +4,7 @@ import { getCurrentUser } from "@/lib/utils/session";
 
 /**
  * GET /api/listings
- * Get all listings for the authenticated user
- * Requires authentication (PUBLIC user type)
+ * Get listings for the authenticated user only
  */
 export async function GET(request: NextRequest) {
   try {
@@ -21,34 +20,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (user.type !== "PUBLIC") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "FORBIDDEN",
-            message: "Only PUBLIC users can view listings",
-          },
-        },
-        { status: 403 }
-      );
-    }
-
-    // Get all listings for parcels owned by this user
+    // Get listings for parcels owned by this user only
     const { data: listings, error } = await supabaseServer
       .from("listings")
       .select(
         `
         *,
-        parcel:parcels!parcel_id (
-          parcel_id,
-          area_m2,
-          admin_region,
-          status
-        )
+      parcel:parcels!parcel_id (
+        parcel_id,
+        area_m2,
+        admin_region,
+        status
+      )
       `
       )
-      .eq("parcels.owner_id", user.id)
+      .eq("owner_id", user.id)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -96,19 +82,6 @@ export async function POST(request: NextRequest) {
           error: { code: "UNAUTHORIZED", message: "Not authenticated" },
         },
         { status: 401 }
-      );
-    }
-
-    if (user.type !== "PUBLIC") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "FORBIDDEN",
-            message: "Only PUBLIC users can create listings",
-          },
-        },
-        { status: 403 }
       );
     }
 

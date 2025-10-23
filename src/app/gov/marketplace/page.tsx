@@ -3,16 +3,15 @@
 import { useState } from "react";
 import { GDropdownButton, GTable } from "@gal-ui/components";
 import { Tag } from "antd";
-import { useListings, useListingMutations } from "@/hooks/useListings";
+import { useGovernmentListings, useListingMutations } from "@/hooks/useListings";
 import type { ListingWithParcel } from "@/client-action/listing";
 import AuthGuard from "@/components/auth/AuthGuard";
 import ListingFormModal from "@/components/listing/ListingFormModal";
 
-const MyListingPage = () => {
-  const { listings, isLoading } = useListings();
-  const { deleteListing, updateListing, } = useListingMutations();
+const MarketplaceListingPage = () => {
+  const { listings, isLoading } = useGovernmentListings();
+  const { deleteListing, updateListing } = useListingMutations();
 
-  console.log(listings, '?')
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedListing, setSelectedListing] = useState<ListingWithParcel | null>(null);
 
@@ -32,7 +31,10 @@ const MyListingPage = () => {
   const TableHeader = () => {
     return (
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">My Listings</h1>
+        <h1 className="text-2xl font-bold">Marketplace Listings</h1>
+        <div className="text-sm text-gray-600">
+          Total: {listings.length} listings
+        </div>
       </div>
     );
   };
@@ -41,15 +43,34 @@ const MyListingPage = () => {
     {
       title: "Parcel ID",
       key: "parcel_id",
-      width: 200,
+      width: 180,
       render: (_: any, record: ListingWithParcel) => {
         return record.parcel?.parcel_id || "-";
       },
     },
     {
+      title: "Owner",
+      key: "owner",
+      width: 200,
+      render: (_: any, record: ListingWithParcel) => {
+        const owner = record.parcel?.owner;
+        return (
+          <div>
+            <div className="font-medium">{owner?.full_name || "Unknown"}</div>
+            <div className="text-xs text-gray-500 truncate">
+              {owner?.wallet_address ?
+                `${owner.wallet_address.slice(0, 8)}...${owner.wallet_address.slice(-6)}`
+                : "-"
+              }
+            </div>
+          </div>
+        );
+      },
+    },
+    {
       title: "Location",
       key: "location",
-      width: 250,
+      width: 220,
       render: (_: any, record: ListingWithParcel) => {
         const region = record.parcel?.admin_region;
         return `${region?.city}, ${region?.state}, ${region?.country}`;
@@ -58,19 +79,24 @@ const MyListingPage = () => {
     {
       title: "Area",
       key: "area",
-      width: 150,
+      width: 120,
       render: (_: any, record: ListingWithParcel) => {
         const area = record.parcel?.area_m2;
         if (!area) return "-";
         const acres = (area * 0.000247105).toFixed(2);
-        return `${area.toLocaleString()} m² (${acres} acres)`;
+        return (
+          <div>
+            <div className="font-medium">{area.toLocaleString()} m²</div>
+            <div className="text-xs text-gray-500">{acres} acres</div>
+          </div>
+        );
       },
     },
     {
       title: "Type",
       dataIndex: "type",
       key: "type",
-      width: 100,
+      width: 80,
       render: (type: string) => (
         <Tag color={type === "SALE" ? "green" : "blue"}>{type}</Tag>
       ),
@@ -78,7 +104,7 @@ const MyListingPage = () => {
     {
       title: "Price",
       key: "price",
-      width: 150,
+      width: 140,
       render: (_: any, record: ListingWithParcel) => {
         return (
           <div>
@@ -98,14 +124,14 @@ const MyListingPage = () => {
       title: "Contact",
       dataIndex: "contact_phone",
       key: "contact_phone",
-      width: 150,
+      width: 130,
       render: (phone: string) => phone || <span className="text-gray-400">-</span>,
     },
     {
       title: "Status",
       dataIndex: "active",
       key: "active",
-      width: 100,
+      width: 90,
       render: (active: boolean) => (
         <Tag color={active ? "success" : "default"}>
           {active ? "Active" : "Inactive"}
@@ -116,13 +142,13 @@ const MyListingPage = () => {
       title: "Created",
       dataIndex: "created_at",
       key: "created_at",
-      width: 150,
+      width: 110,
       render: (date: string) => date ? new Date(date).toLocaleDateString() : "-",
     },
     {
       title: "Actions",
       key: "actions",
-      width: 150,
+      width: 120,
       fixed: "right" as const,
       render: (_: any, record: ListingWithParcel) => {
         const menuItems = [
@@ -162,7 +188,7 @@ const MyListingPage = () => {
   };
 
   return (
-    <AuthGuard requiredUserType="PUBLIC" redirectTo="/">
+    <AuthGuard requiredUserType="GOV" redirectTo="/">
       <div className="p-6">
         <GTable
           customHeader={<TableHeader />}
@@ -171,10 +197,11 @@ const MyListingPage = () => {
           loading={isLoading}
           rowKey="id"
           pagination={{
-            pageSize: 10,
+            pageSize: 15,
             showSizeChanger: true,
             showTotal: (total) => `Total ${total} listings`,
           }}
+          scroll={{ x: 1400 }}
         />
 
         {/* Edit Listing Modal */}
@@ -195,4 +222,4 @@ const MyListingPage = () => {
   );
 };
 
-export default MyListingPage;
+export default MarketplaceListingPage;

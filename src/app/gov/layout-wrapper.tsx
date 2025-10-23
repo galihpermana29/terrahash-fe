@@ -19,7 +19,7 @@ function GovLayoutWrapper({ children }: { children: React.ReactNode }) {
       key: 'history',
       label: (
         <span>
-          All Submissions
+          Transactions
         </span>
       ),
 
@@ -37,7 +37,7 @@ function GovLayoutWrapper({ children }: { children: React.ReactNode }) {
       key: 'marketplace',
       label: (
         <span>
-          Marketplace Overview
+          Marketplace List
         </span>
       ),
 

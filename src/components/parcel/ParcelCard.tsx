@@ -8,7 +8,7 @@ interface ParcelCardProps {
   onViewDetails?: () => void;
 }
 
-const DEFAULT_IMAGE =
+export const DEFAULT_IMAGE =
   "https://res.cloudinary.com/dqipjpy1w/image/upload/v1760192851/murad-swaleh-7tDidSXbgD8-unsplash_hn17iq.jpg";
 
 export default function ParcelCard({
@@ -42,11 +42,11 @@ export default function ParcelCard({
   // Calculate display price for lease
   const getDisplayPrice = () => {
     if (!hasListing || !listingPrice) return null;
-    
+
     if (listingType === "SALE") {
       return `KES ${listingPrice.toLocaleString()}`;
     }
-    
+
     // For LEASE, show per month
     return `KES ${listingPrice.toLocaleString()}/mo`;
   };
@@ -54,13 +54,13 @@ export default function ParcelCard({
   // Get lease period label
   const getLeasePeriodLabel = () => {
     if (!leasePeriod) return "";
-    
+
     const labels = {
       "1_MONTH": "Monthly",
       "6_MONTHS": "Every 6 months",
       "12_MONTHS": "Yearly",
     };
-    
+
     return labels[leasePeriod];
   };
 
