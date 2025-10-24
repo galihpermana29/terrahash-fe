@@ -10,6 +10,7 @@ import type { Parcel } from "@/lib/types/parcel";
 import AuthGuard from "@/components/auth/AuthGuard";
 import { useAuth } from "@/contexts/AuthContext";
 import ListingFormModal from "@/components/listing/ListingFormModal";
+import Title from "antd/es/typography/Title";
 
 const MyLandPage = () => {
   const router = useRouter();
@@ -28,14 +29,14 @@ const MyLandPage = () => {
   const handleOpenListingModal = (parcel: Parcel, type: "SALE" | "LEASE") => {
     setSelectedParcel(parcel);
     setListingType(type);
-    
+
     // Check if parcel already has a listing
     if (parcel.listing && parcel.listing.active) {
       setListingMode("edit");
     } else {
       setListingMode("create");
     }
-    
+
     setListingModalOpen(true);
   };
 
@@ -53,9 +54,7 @@ const MyLandPage = () => {
   const TableHeader = () => {
     return (
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">My Land</h1>
-
-      </div>
+        <Title level={4} className="!mb-0">  My Land </Title>      </div>
     );
   };
 
@@ -157,41 +156,41 @@ const MyLandPage = () => {
       fixed: "right" as const,
       render: (_: any, record: Parcel) => {
         const hasActiveListing = record.listing && record.listing.active;
-        
+
         const menuItems = hasActiveListing
           ? [
-              {
-                key: "edit-listing",
-                label: "Edit Listing",
-                onClick: () => {
-                  handleOpenListingModal(record, record.listing!.type);
-                },
+            {
+              key: "edit-listing",
+              label: "Edit Listing",
+              onClick: () => {
+                handleOpenListingModal(record, record.listing!.type);
               },
-              {
-                key: "remove-listing",
-                label: "Remove Listing",
-                danger: true,
-                onClick: () => {
-                  handleRemoveListing(record);
-                },
+            },
+            {
+              key: "remove-listing",
+              label: "Remove Listing",
+              danger: true,
+              onClick: () => {
+                handleRemoveListing(record);
               },
-            ]
+            },
+          ]
           : [
-              {
-                key: "sale",
-                label: "List for Sale",
-                onClick: () => {
-                  handleOpenListingModal(record, "SALE");
-                },
+            {
+              key: "sale",
+              label: "List for Sale",
+              onClick: () => {
+                handleOpenListingModal(record, "SALE");
               },
-              {
-                key: "lease",
-                label: "List for Lease",
-                onClick: () => {
-                  handleOpenListingModal(record, "LEASE");
-                },
+            },
+            {
+              key: "lease",
+              label: "List for Lease",
+              onClick: () => {
+                handleOpenListingModal(record, "LEASE");
               },
-            ];
+            },
+          ];
 
         return <GDropdownButton menu={{ items: menuItems }} />;
       },

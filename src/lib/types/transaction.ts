@@ -1,6 +1,6 @@
 export type TransactionType = 'PURCHASE';
 
-export type TransactionStatus = 'INITIATED' | 'COMPLETED' | 'FAILED';
+export type TransactionStatus = 'COMPLETED' | 'FAILED';
 
 export interface Transaction {
   id: string;

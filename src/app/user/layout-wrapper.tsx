@@ -32,6 +32,15 @@ function UserLayoutWrapper({ children }: { children: React.ReactNode }) {
       ),
 
     },
+    {
+      key: 'my-transactions',
+      label: (
+        <span>
+          My Transactions
+        </span>
+      ),
+
+    },
   ];
 
 

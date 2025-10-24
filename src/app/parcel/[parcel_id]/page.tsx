@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Carousel, Tag, Spin, Typography } from "antd";
+import { Carousel, Tag, Spin, Typography, Modal, message } from "antd";
 import { GButton } from "@gal-ui/components";
 import { useParcelDetail } from "@/hooks/gov/useParcels";
 import { useAuth } from "@/contexts/AuthContext";
 import ParcelMap from "@/components/map/ParcelMap";
 import MapLegend from "@/components/map/MapLegend";
+import { createPurchaseTransaction } from "@/client-action/transaction";
 import type { ParcelFC, ParcelGeometry } from "@/lib/types/parcel";
-import { DEFAULT_IMAGE } from "@/components/parcel/ParcelCard";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -20,9 +20,11 @@ export default function ParcelDetailPage() {
   const parcelId = params.parcel_id as string;
 
   const { parcel, isLoading } = useParcelDetail(parcelId);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
 
   // Placeholder images for carousel
-  const images = parcel?.asset_url && parcel.asset_url.length > 0 ? parcel.asset_url : [DEFAULT_IMAGE];
+  const images = parcel?.asset_url && parcel.asset_url.length > 0 ? parcel.asset_url : ["/placeholder-land.jpg"];
 
   // Create map data for single parcel
   const mapData: ParcelFC | null = parcel
@@ -49,8 +51,61 @@ export default function ParcelDetailPage() {
       router.push("/auth/login");
       return;
     }
-    // TODO: Implement buy/lease logic
-    console.log("Buy/Lease action");
+
+    if (!parcel?.listing) {
+      message.error("No listing found for this parcel");
+      return;
+    }
+
+    // Disable lease functionality temporarily
+    if (parcel.listing.type === "LEASE") {
+      message.info("Lease functionality is coming soon!");
+      return;
+    }
+
+    // Only handle SALE for now
+    if (parcel.listing.type === "SALE") {
+      setShowPurchaseModal(true);
+    }
+  };
+
+  const handlePurchaseConfirm = async () => {
+    if (!parcel?.listing || !user) return;
+
+    setIsProcessing(true);
+    try {
+      // Web2 transaction creation
+      const response = await createPurchaseTransaction({
+        listing_id: parcel.listing.id,
+      });
+
+      if (response.success && response.data) {
+        message.success("Purchase completed successfully!");
+        setShowPurchaseModal(false);
+
+        // TODO: For web3 engineer - This is where you would:
+        // 1. Connect to user's wallet
+        // 2. Execute smart contract transaction
+        // 3. Update transaction with blockchain hash
+        console.log("🔗 [WEB3 TODO] Execute blockchain transaction for:", {
+          transactionId: response.data.transaction.id,
+          listingId: parcel.listing.id,
+          amount: parcel.listing.price_kes,
+          buyer: user.wallet_address,
+          seller: response.data.listing.seller_wallet
+        });
+
+        // Redirect to transaction history
+        router.push("/user/my-transactions");
+      } else {
+        message.error(response.error?.message || "Purchase failed");
+      }
+    } catch (error) {
+      console.error("Purchase error:", error);
+      message.error("An error occurred during purchase");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (isLoading) {
@@ -115,11 +170,19 @@ export default function ParcelDetailPage() {
               {hasListing && isPublicUser && !isOwner && (
                 <button
                   onClick={handleBuyOrLease}
-                  className="h-10 px-6 rounded-full bg-brand-primary text-white hover:bg-brand-primary-dark transition-colors font-medium"
+                  disabled={isProcessing || parcel.listing?.type === "LEASE"}
+                  className={`h-10 px-6 rounded-full font-medium transition-colors ${parcel.listing?.type === "LEASE"
+                    ? "bg-gray-400 text-white cursor-not-allowed"
+                    : isProcessing
+                      ? "bg-gray-400 text-white cursor-not-allowed"
+                      : "bg-brand-primary text-white hover:bg-brand-primary-dark"
+                    }`}
                 >
-                  {parcel.listing?.type === "SALE"
-                    ? "Buy Now"
-                    : "Lease Now"}
+                  {isProcessing
+                    ? "Processing..."
+                    : parcel.listing?.type === "SALE"
+                      ? "Buy Now"
+                      : "Lease Soon"}
                 </button>
               )}
             </div>
@@ -303,6 +366,78 @@ export default function ParcelDetailPage() {
         </div>
       </div>
 
+      {/* Purchase Confirmation Modal */}
+      <Modal
+        title="Confirm Purchase"
+        open={showPurchaseModal}
+        onCancel={() => setShowPurchaseModal(false)}
+        footer={[
+          <button
+            key="cancel"
+            onClick={() => setShowPurchaseModal(false)}
+            className="px-4 py-2 mr-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            disabled={isProcessing}
+          >
+            Cancel
+          </button>,
+          <button
+            key="confirm"
+            onClick={handlePurchaseConfirm}
+            disabled={isProcessing}
+            className={`px-4 py-2 rounded-md font-medium transition-colors ${isProcessing
+              ? "bg-gray-400 text-white cursor-not-allowed"
+              : "bg-brand-primary text-white hover:bg-brand-primary-dark"
+              }`}
+          >
+            {isProcessing ? "Processing..." : "Confirm Purchase"}
+          </button>,
+        ]}
+      >
+        {parcel?.listing && (
+          <div className="space-y-4">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h4 className="font-semibold text-lg mb-2">Purchase Details</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Parcel ID:</span>
+                  <span className="font-medium">{parcel.parcel_id}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Area:</span>
+                  <span className="font-medium">
+                    {parcel.area_m2.toLocaleString()} m² ({(parcel.area_m2 * 0.000247105).toFixed(2)} acres)
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Location:</span>
+                  <span className="font-medium">
+                    {parcel.admin_region.city}, {parcel.admin_region.state}
+                  </span>
+                </div>
+                <div className="flex justify-between text-lg font-semibold border-t pt-2">
+                  <span>Total Price:</span>
+                  <span className="text-brand-primary">
+                    KES {parcel.listing.price_kes.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h5 className="font-medium text-blue-800 mb-2">🔗 Web3 Integration</h5>
+              <p className="text-sm text-blue-700">
+                This purchase will be recorded on the Hedera blockchain for transparency and security.
+                You'll need to confirm the transaction in your wallet.
+              </p>
+            </div>
+
+            <p className="text-sm text-gray-600">
+              By confirming this purchase, you agree to the terms and conditions of the land sale.
+              This transaction cannot be reversed once completed.
+            </p>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

@@ -7,12 +7,12 @@ import { useListings, useListingMutations } from "@/hooks/useListings";
 import type { ListingWithParcel } from "@/client-action/listing";
 import AuthGuard from "@/components/auth/AuthGuard";
 import ListingFormModal from "@/components/listing/ListingFormModal";
+import Title from "antd/es/typography/Title";
 
 const MyListingPage = () => {
   const { listings, isLoading } = useListings();
   const { deleteListing, updateListing, } = useListingMutations();
 
-  console.log(listings, '?')
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedListing, setSelectedListing] = useState<ListingWithParcel | null>(null);
 
@@ -32,7 +32,7 @@ const MyListingPage = () => {
   const TableHeader = () => {
     return (
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">My Listings</h1>
+        <Title level={4} className="!mb-0">  My Listings </Title>
       </div>
     );
   };
