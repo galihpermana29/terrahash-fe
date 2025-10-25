@@ -114,8 +114,7 @@ const MyLandPage = () => {
           <div>
             <div className="font-medium">{record.owner.full_name}</div>
             <div className="text-xs text-gray-500">
-              {record.owner.wallet_address.slice(0, 6)}...
-              {record.owner.wallet_address.slice(-4)}
+              {record.owner.wallet_address}
             </div>
           </div>
         );

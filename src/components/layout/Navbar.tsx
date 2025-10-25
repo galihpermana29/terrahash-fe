@@ -28,17 +28,20 @@ export default function Navbar() {
 
   const isActive = (href: string) => pathname === href;
 
-  const handleRegister = async (values: { full_name: string }) => {
-    if (!address) return;
+const handleRegister = async (values: { full_name: string }) => {
+  if (!address) return;
 
-    try {
-      await register(address, values.full_name);
-      dismissRegistration();
-      form.resetFields();
-    } catch (error) {
-      console.error('Registration error:', error);
-    }
-  };
+  try {
+    await register(address, values.full_name);
+    dismissRegistration();
+    form.resetFields();
+  } catch (error: any) {
+    const msg =
+      error?.message ||
+      (error?.response?.data?.message ? error.response.data.message : "Registration failed");
+    console.error("Registration error:", msg);
+  }
+};
 
   const handleLogout = async () => {
     await logout();
@@ -165,15 +168,24 @@ export default function Navbar() {
               <Input placeholder="Enter your full name" size="large" />
             </Form.Item>
 
-            <div className="text-xs text-gray-500 mb-4">
-              <strong>Wallet:</strong> {address}
+            <div className="text-xs text-gray-500 mb-4 flex flex-col">
+              <span>
+                <strong>Wallet:</strong> {hederaAccountId || address}
+              </span>
+              {!hederaAccountId && address && (
+                <span className="text-red-500 mt-1">
+                  Oops! Looks like your Hedera account isn’t ready yet. Please get some HBAR from the faucet first.
+                </span>
+              )}
             </div>
+
 
             <Form.Item className="mb-0">
               <button
                 type="submit"
-                disabled={isRegistering}
-                className="w-full px-4 py-2 rounded-lg bg-brand-primary text-white font-medium hover:bg-brand-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                disabled={isRegistering || !hederaAccountId} // <-- disable kalau belum ada Hedera ID
+                className="w-full px-4 py-2 rounded-lg bg-brand-primary text-white font-medium 
+                          hover:bg-brand-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
               >
                 {isRegistering ? 'Registering...' : 'Complete Registration'}
               </button>

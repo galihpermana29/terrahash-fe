@@ -54,7 +54,7 @@ const UserTransactionHistoryPage = () => {
         <div>
           <div className="font-medium">{name}</div>
           <Text type="secondary" className="text-xs">
-            {record.seller.wallet_address.slice(0, 10)}...
+            {record.seller.wallet_address}
           </Text>
         </div>
       ),
@@ -117,7 +117,7 @@ const UserTransactionHistoryPage = () => {
         <div>
           <div className="font-medium">{name}</div>
           <Text type="secondary" className="text-xs">
-            {record.buyer.wallet_address.slice(0, 10)}...
+            {record.buyer.wallet_address}
           </Text>
         </div>
       ),

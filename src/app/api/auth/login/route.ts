@@ -10,7 +10,7 @@ import { authRepository } from "@/lib/repository/auth";
 import { errorResponse, successResponse } from "@/lib/utils/response";
 import { createSession } from "@/lib/utils/session";
 import { User } from "@/lib/types/user";
-
+import { getHederaAccountIdFromEvmAddress } from "@/lib/hedera/utils";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -43,21 +43,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate Ethereum address format
-    if (!/^0x[a-fA-F0-9]{40}$/.test(wallet_address)) {
-      return errorResponse(
-        "INVALID_WALLET_ADDRESS",
-        "Invalid wallet address format",
-        null,
-        400
-      );
-    }
+    // // Validate Ethereum address format
+    // if (!/^0x[a-fA-F0-9]{40}$/.test(wallet_address)) {
+    //   return errorResponse(
+    //     "INVALID_WALLET_ADDRESS",
+    //     "Invalid wallet address format",
+    //     null,
+    //     400
+    //   );
+    // }
 
     // Normalize wallet address
     const normalizedWallet = wallet_address.toLowerCase();
+    
+    // Convert EVM → HEDERA ID
+    const hederaAccountId = await getHederaAccountIdFromEvmAddress(normalizedWallet);
 
     // Find user by wallet
-    const user = await authRepository.findByWallet(normalizedWallet);
+    const user = await authRepository.findByWallet(hederaAccountId || normalizedWallet);
 
     if (!user) {
       return errorResponse(
