@@ -18,6 +18,7 @@ import { useParcelForm } from "@/hooks/gov/useParcelForm";
 import { useParcels, useParcelDetail } from "@/hooks/gov/useParcels";
 import AuthGuard from "@/components/auth/AuthGuard";
 import { useWatch } from "antd/es/form/Form";
+import { createTopicWithMemo, updateTopicMemo } from "@/lib/hedera/utils";
 
 // Countries in Africa (sample list)
 const AFRICAN_COUNTRIES = [
@@ -121,7 +122,7 @@ function ManageParcelContent() {
     } else if (!isEditMode && !isDataLoaded) {
       // Create mode: auto-generate parcel ID
       form.setFieldsValue({
-        parcel_id: `PARCEL-${Date.now()}`,
+        // parcel_id: `PARCEL-${Date.now()}`,
         status: "UNCLAIMED",
       });
       setIsDataLoaded(true);
@@ -161,26 +162,54 @@ function ManageParcelContent() {
   };
 
   const handleSubmit = async (values: any) => {
-    const payload = buildFormPayload(values);
-
-    if (!payload) {
-      return;
-    }
-
     try {
-      if (isEditMode && parcelId) {
-        // Update existing parcel
-        await updateParcel({ parcelId, data: payload });
-        router.push("/gov/parcel-management");
+      let parcelId = values.parcel_id;
+
+      // Common memoData preparation for both create and edit modes
+      const memoData = {
+        ...values,
+        area_m2: area,
+        // Remove unnecessary fields
+        parcel_id: undefined,
+        status: undefined,
+        owner_wallet: undefined,
+        notes: undefined,
+        asset_url: undefined,
+        owner: undefined,
+      } as const;
+
+      const cleanMemoData = Object.fromEntries(
+        Object.entries(memoData).filter(([_, v]) => v !== undefined)
+      );
+
+      if (!isEditMode) {
+        // Create mode
+        const topicId = await createTopicWithMemo(JSON.stringify(cleanMemoData));
+        const topicNumber = topicId.split(".").pop();
+        parcelId = `PARCEL-${topicNumber}`;
       } else {
-        // Create new parcel
-        await createParcel(payload);
-        router.push("/gov/parcel-management");
+        // Edit mode
+        const topicNumber = parcelId.replace("PARCEL-", "");
+        const topicId = `0.0.${topicNumber}`;
+        await updateTopicMemo(topicId, JSON.stringify(cleanMemoData));
+        console.log("[Submit] Hedera topic memo updated:", topicId);
       }
-    } catch (error) {
-      console.error("Error submitting parcel:", error);
+
+      // Build payload and submit to backend
+      const payload = buildFormPayload({ ...values, parcel_id: parcelId });
+      
+      if (isEditMode) {
+        await updateParcel({ parcelId, data: payload });
+      } else {
+        await createParcel(payload);
+      }
+
+      router.push("/gov/parcel-management");
+    } catch (err) {
+      console.error("[Submit] Error submitting parcel:", err);
     }
   };
+
 
   // Show loading state while fetching parcel data in edit mode
   if (isEditMode && isLoadingParcel) {
@@ -256,7 +285,6 @@ function ManageParcelContent() {
             <Form.Item
               label="Parcel ID"
               name="parcel_id"
-              rules={[{ required: true, message: "Parcel ID is required" }]}
             >
               <GInput disabled placeholder="Auto-generated" />
             </Form.Item>
@@ -341,6 +369,7 @@ function ManageParcelContent() {
                 <OwnerValidator
                   value={ownerWallet}
                   onChange={handleOwnerChange}
+                  placeholder="0.0.12345..."
                 />
               </Form.Item>
             )}

@@ -98,7 +98,7 @@ export function useParcelForm() {
     };
 
     const payload: ParcelFormPayload = {
-      parcel_id: values.parcel_id || `PARCEL-${Date.now()}`, // Auto-generate if not provided
+      parcel_id: values.parcel_id , // Auto-generate if not provided
       geometry_geojson: geometry!,
       area_m2: area,
       admin_region: adminRegion,
