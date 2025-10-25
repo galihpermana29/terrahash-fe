@@ -9,10 +9,12 @@ import { useChainModal, useConnectModal } from '@rainbow-me/rainbowkit';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWalletAuth } from '@/hooks/useWalletAuth';
 import { useDisconnect } from 'wagmi';
+import { useHederaAccountId } from '@/hooks/hedera/useHederaAccountId';
 
 export default function Navbar() {
   const pathname = usePathname();
   const { address, isConnected } = useAccount();
+  const { hederaAccountId } = useHederaAccountId(address);
   const { openChainModal } = useChainModal();
   const { openConnectModal } = useConnectModal();
   const { disconnect } = useDisconnect();
@@ -77,7 +79,9 @@ export default function Navbar() {
               // Connected & Authenticated: Show user dropdown
               (() => {
                 const userName = user.full_name || 'User';
-                const displayAddr = `${address.slice(0, 6)}...${address.slice(-4)}`;
+                const displayAddr = hederaAccountId
+                ? hederaAccountId
+                : `${address.slice(0, 6)}...${address.slice(-4)}`;
                 const initials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
                 const items: MenuProps['items'] = [
