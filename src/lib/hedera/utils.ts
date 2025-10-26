@@ -1,8 +1,7 @@
-import { AccountId, AccountInfoQuery, TopicCreateTransaction, TopicUpdateTransaction } from "@hashgraph/sdk";
+import { AccountId, AccountInfoQuery, PrivateKey, TopicCreateTransaction, TopicUpdateTransaction } from "@hashgraph/sdk";
 import { getHederaClient } from "./client";
 
-const client = getHederaClient(); // singleton client
-
+const { client, operatorKey } = getHederaClient();
 export async function getHederaAccountIdFromEvmAddress(address: string) {
   if (!address) return null;
 
@@ -19,7 +18,9 @@ export async function getHederaAccountIdFromEvmAddress(address: string) {
 
 export async function createTopicWithMemo(memo: string): Promise<string> {
   try {
-    const tx = new TopicCreateTransaction().setTopicMemo(memo);
+    const tx = new TopicCreateTransaction()
+      .setTopicMemo(memo)
+      .setAdminKey(operatorKey.publicKey);
     const response = await tx.execute(client);
     const receipt = await response.getReceipt(client);
     return receipt.topicId!.toString();
