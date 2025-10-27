@@ -18,8 +18,9 @@ import { useParcelForm } from "@/hooks/gov/useParcelForm";
 import { useParcels, useParcelDetail } from "@/hooks/gov/useParcels";
 import AuthGuard from "@/components/auth/AuthGuard";
 import { useWatch } from "antd/es/form/Form";
-import { mintNFT } from "@/lib/hedera/utils";
+import { mintNFT, updateNFTMetadata } from "@/lib/hedera/utils";
 import { uploadMemoDataToIPFS } from "@/lib/utils/ipfs";
+import { getHederaClient } from "@/lib/hedera/client";
 
 // Countries in Africa (sample list)
 const AFRICAN_COUNTRIES = [
@@ -73,7 +74,7 @@ function ManageParcelContent() {
   const { parcel: existingParcel, isLoading: isLoadingParcel } = useParcelDetail(
     isEditMode ? parcelId : null
   );
-
+  const { nftTokenId, treasuryAccountId } = getHederaClient();
   const asset_url = useWatch('asset_url', form);
   const certif_url = useWatch('certif_url', form);
 
@@ -82,7 +83,7 @@ function ManageParcelContent() {
   const [status, setStatus] = useState<"UNCLAIMED" | "OWNED">("UNCLAIMED");
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [loadedGeometry, setLoadedGeometry] = useState<GeoJSON.Feature<GeoJSON.Polygon> | null>(null);
-
+  
   // Load existing parcel data in edit mode
   useEffect(() => {
     if (isEditMode && existingParcel && !isDataLoaded) {
@@ -125,7 +126,7 @@ function ManageParcelContent() {
     } else if (!isEditMode && !isDataLoaded) {
       // Create mode: auto-generate parcel ID
       form.setFieldsValue({
-        parcel_id: `PARCEL-${Date.now()}`,
+        // parcel_id: `PARCEL-${Date.now()}`,
         status: "UNCLAIMED",
       });
       setIsDataLoaded(true);
@@ -167,9 +168,10 @@ function ManageParcelContent() {
   const handleSubmit = async (values: any) => {
     try {
       const payload = buildFormPayload(values);
-
-      // Common memoData
-      // a preparation for both create and edit modes
+      if (!payload) {
+        return;
+      }
+      // Build HIP-412 Metadata
       const memoData = {
         format: "HIP412@2.0.0",
         name: values.parcel_id,
@@ -187,34 +189,32 @@ function ManageParcelContent() {
           { trait_type: "State", value: values.state },
           { trait_type: "City", value: values.city },
           { trait_type: "Area (m²)", value: area },
-          { 
-            trait_type: "GeoPoint", 
-            value: {
-              type: geometry.type,
-              coordinates: geometry.geometry.coordinates
-            }
-          }
+          { trait_type: "GeoPoint Type", value: geometry.type },
+          { trait_type: "GeoPoint Coordinates", value: geometry.geometry.coordinates[0] }
         ]
       } as const;
-
-      if (!payload) {
-        return;
-      }
-
+      
       const { metadataIpfsUri } = await uploadMemoDataToIPFS(memoData);
-      
-      if (!isEditMode) {
-        await mintNFT(metadataIpfsUri, values.owner_wallet || "0.0.7131452" );
-      } else {
-        console.log("[Submit] Hedera topic memo updated:", parcelId);
-      }
-      
-      if (isEditMode) {
-        await updateParcel({ parcelId, data: payload });
-      } else {
-        await createParcel(payload);
-      }
+      let serialNumber: string | null = null;
 
+      if (!isEditMode) {
+        serialNumber = await mintNFT(
+          metadataIpfsUri,
+          values.owner_wallet || treasuryAccountId
+        );
+
+        const cleanedTokenId = nftTokenId.toString().replace("0.0.", "");
+        const parcelId = `PARCEL-${cleanedTokenId}-${serialNumber}`;
+        payload.parcel_id = parcelId;
+
+        await createParcel(payload);
+      } else {
+        const existingSerial = values.parcel_id?.split("-")?.pop();
+        if (!existingSerial) throw new Error("Invalid parcel_id format");
+
+        await updateNFTMetadata(existingSerial, metadataIpfsUri, values.owner_wallet, values.status);
+        await updateParcel({ parcelId: values.parcel_id, data: payload });
+      }
       router.push("/gov/parcel-management");
     } catch (err) {
       console.error("[Submit] Error submitting parcel:", err);
