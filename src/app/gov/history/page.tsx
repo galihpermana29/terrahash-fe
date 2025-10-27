@@ -87,7 +87,7 @@ const GovernmentTransactionHistoryPage = () => {
       key: "amount_kes",
       render: (amount: number) => (
         <Text strong className="text-green-600">
-          KES {amount.toLocaleString()}
+          HBAR {amount.toLocaleString()}
         </Text>
       ),
     },
@@ -270,7 +270,7 @@ const GovernmentTransactionHistoryPage = () => {
                   <div>
                     <Text type="secondary">Amount</Text>
                     <div className="font-medium text-green-600">
-                      KES {selectedTransaction.amount_kes.toLocaleString()}
+                      HBAR {selectedTransaction.amount_kes.toLocaleString()}
                     </div>
                   </div>
                 </div>

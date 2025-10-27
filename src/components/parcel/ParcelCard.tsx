@@ -44,11 +44,11 @@ export default function ParcelCard({
     if (!hasListing || !listingPrice) return null;
 
     if (listingType === "SALE") {
-      return `KES ${listingPrice.toLocaleString()}`;
+      return `HBAR ${listingPrice.toLocaleString()}`;
     }
 
     // For LEASE, show per month
-    return `KES ${listingPrice.toLocaleString()}/mo`;
+    return `HBAR ${listingPrice.toLocaleString()}/mo`;
   };
 
   // Get lease period label

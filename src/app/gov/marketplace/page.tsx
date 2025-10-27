@@ -109,7 +109,7 @@ const MarketplaceListingPage = () => {
         return (
           <div>
             <div className="font-medium">
-              KES {record.price_kes?.toLocaleString() || "0"}
+              HBAR {record.price_kes?.toLocaleString() || "0"}
             </div>
             {record.type === "LEASE" && record.lease_period && (
               <div className="text-xs text-gray-500">

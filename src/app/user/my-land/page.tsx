@@ -139,7 +139,7 @@ const MyLandPage = () => {
                 {record.listing.type}
               </Tag>
               <div className="text-xs text-gray-600 mt-1">
-                KES {record.listing.price_kes.toLocaleString()}
+                HBAR {record.listing.price_kes.toLocaleString()}
                 {record.listing.type === "LEASE" && "/mo"}
               </div>
             </div>

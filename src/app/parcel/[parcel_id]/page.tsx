@@ -249,7 +249,7 @@ export default function ParcelDetailPage() {
                 <div className="mb-6">
                   <div className="flex items-baseline gap-3">
                     <Title level={3}>
-                      KES {parcel.listing?.price_kes.toLocaleString()}
+                      HBAR {parcel.listing?.price_kes.toLocaleString()}
                     </Title>
                     {parcel.listing?.type === "LEASE" && (
                       <Text type="secondary" className="text-lg">/month</Text>
@@ -417,7 +417,7 @@ export default function ParcelDetailPage() {
                 <div className="flex justify-between text-lg font-semibold border-t pt-2">
                   <span>Total Price:</span>
                   <span className="text-brand-primary">
-                    KES {parcel.listing.price_kes.toLocaleString()}
+                    HBAR {parcel.listing.price_kes.toLocaleString()}
                   </span>
                 </div>
               </div>

@@ -144,8 +144,8 @@ export default function ListingFormModal({
         <Form.Item
           label={
             listingType === "LEASE"
-              ? "Price per Month (KES)"
-              : "Price (KES)"
+              ? "Price per Month (HBAR)"
+              : "Price (HBAR)"
           }
           name="price_kes"
           rules={[
@@ -162,7 +162,7 @@ export default function ListingFormModal({
         >
           <GInput
             type="number"
-            placeholder="Enter price in KES"
+            placeholder="Enter price in HBAR"
           />
         </Form.Item>
 
@@ -194,7 +194,7 @@ export default function ListingFormModal({
                     Total Payment per Period
                   </div>
                   <div className="text-blue-700">
-                    KES {calculateLeaseTotal()?.toLocaleString()}
+                    HBAR {calculateLeaseTotal()?.toLocaleString()}
                   </div>
                 </div>
               )}

@@ -65,7 +65,7 @@ const UserTransactionHistoryPage = () => {
       key: "amount_kes",
       render: (amount: number) => (
         <Text strong className="text-red-600">
-          -KES {amount.toLocaleString()}
+          -HBAR {amount.toLocaleString()}
         </Text>
       ),
     },
@@ -128,7 +128,7 @@ const UserTransactionHistoryPage = () => {
       key: "amount_kes",
       render: (amount: number) => (
         <Text strong className="text-green-600">
-          +KES {amount.toLocaleString()}
+          +HBAR {amount.toLocaleString()}
         </Text>
       ),
     },
@@ -242,7 +242,7 @@ const UserTransactionHistoryPage = () => {
             <div className="bg-purple-50 p-4 rounded-lg">
               <Text type="secondary">Total Spent</Text>
               <div className="text-2xl font-bold text-purple-600">
-                KES {purchaseTransactions
+                HBAR {purchaseTransactions
                   .filter(t => t.status === "COMPLETED")
                   .reduce((sum, t) => sum + t.amount_kes, 0)
                   .toLocaleString()}
@@ -331,7 +331,7 @@ const UserTransactionHistoryPage = () => {
                   <div>
                     <Text type="secondary">Amount</Text>
                     <div className="font-medium text-green-600">
-                      KES {selectedTransaction.amount_kes.toLocaleString()}
+                      HBAR {selectedTransaction.amount_kes.toLocaleString()}
                     </div>
                   </div>
                 </div>

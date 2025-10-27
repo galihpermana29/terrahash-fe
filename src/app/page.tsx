@@ -125,7 +125,7 @@ export default function Home() {
                 <div className="p-4">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-brand-primary">{p.id}</h3>
-                    <span className="text-brand-gold font-medium">KES {p.priceKes.toLocaleString()}</span>
+                    <span className="text-brand-gold font-medium">HBAR {p.priceKes.toLocaleString()}</span>
                   </div>
                   <p className="mt-1 text-sm text-gray-600">{p.location} • {formatAcres(p.areaM2)} acres</p>
                   <div className="mt-4 flex gap-2">
