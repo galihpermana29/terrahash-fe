@@ -42,6 +42,14 @@ function GovLayoutWrapper({ children }: { children: React.ReactNode }) {
       ),
 
     },
+    {
+      key: 'objection',
+      label: (
+        <span>
+          Land Objections
+        </span>
+      ),
+    }
   ];
 
 

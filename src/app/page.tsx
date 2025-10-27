@@ -1,42 +1,21 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import parcels from '@/data/parcels.mock.json';
-import { LISTINGS } from '@/data/listings.mock';
+import { useLatestUnclaimedParcels } from '@/hooks/useLatestParcels';
+import ParcelCard from '@/components/parcel/ParcelCard';
 
 export default function Home() {
   const [q, setQ] = useState('');
+  
+  // Fetch latest unclaimed parcels for the homepage
+  const { parcels: latestParcels, isLoading: parcelsLoading } = useLatestUnclaimedParcels(6);
 
-  const leased = useMemo(() => {
-    const fc = parcels as any;
-    const features = (fc.features || []) as any[];
-    const activeLeaseIds = Object.entries(LISTINGS)
-      .filter(([, v]) => v.type === 'LEASE' && v.active)
-      .map(([k]) => k);
-    return features
-      .filter((f) => activeLeaseIds.includes(f?.properties?.parcel_id))
-      .slice(0, 3)
-      .map((f: any, idx: number) => {
-        const id = f.properties.parcel_id;
-        const listing = LISTINGS[id];
-        return {
-          id,
-          areaM2: f.properties.area_m2,
-          updatedAt: f.properties.updated_at,
-          image: [
-            'https://res.cloudinary.com/dqipjpy1w/image/upload/v1760192851/murad-swaleh-7tDidSXbgD8-unsplash_hn17iq.jpg',
-            'https://res.cloudinary.com/dqipjpy1w/image/upload/v1760192855/sam-szuchan-_wqjX4MauzA-unsplash_u4almv.jpg',
-            'https://res.cloudinary.com/dqipjpy1w/image/upload/v1760192859/fabricio-sakai-oyQD2wngBDM-unsplash_uamshk.jpg',
-          ][idx % 3],
-          location: 'Kenya',
-          priceKes: listing?.price_kes ?? (25000 + idx * 5000),
-        };
-      });
-  }, []);
-
-  const formatAcres = (m2: number) => (m2 / 4046.8564224).toFixed(1);
+  // Helper function to format area
+  const formatAcres = (areaM2: number) => {
+    return (areaM2 / 4046.8564224).toFixed(1);
+  };
 
   return (
     <main className="bg-cream">
@@ -106,40 +85,48 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 3) Leased land cards */}
+      {/* 3) Latest Unclaimed Land */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-end justify-between mb-8">
-            <h2 className="font-semibold text-brand-primary text-[24px] md:text-[32px] lg:text-[40px]">Leased Land</h2>
+            <h2 className="font-semibold text-brand-primary text-[24px] md:text-[32px] lg:text-[40px]">Latest Unclaimed Land</h2>
             <Link href="/map" className="text-brand-gold hover:opacity-80">View all on map →</Link>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {leased.map((p) => (
-              <div key={p.id} className="rounded-xl border border-gray-200 bg-cream shadow-sm overflow-hidden">
-                <div className="relative h-44">
-                  <Image src={p.image} alt={p.id} fill className="object-cover" />
-                  <span className="absolute top-3 left-3 text-xs px-2 py-1 rounded-full bg-brand-gold text-text-dark shadow">
-                    LEASED
-                  </span>
-                </div>
-                <div className="p-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-brand-primary">{p.id}</h3>
-                    <span className="text-brand-gold font-medium">KES {p.priceKes.toLocaleString()}</span>
-                  </div>
-                  <p className="mt-1 text-sm text-gray-600">{p.location} • {formatAcres(p.areaM2)} acres</p>
-                  <div className="mt-4 flex gap-2">
-                    <Link href={`/map?q=${p.id}`} className="inline-flex">
-                      <button className="h-10 px-4 rounded-full bg-brand-primary text-white hover:bg-brand-primary-dark">View on Map</button>
-                    </Link>
-                    <Link href={`/map?q=${p.id}`} className="inline-flex">
-                      <button className="h-10 px-4 rounded-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">Details</button>
-                    </Link>
+          
+          {parcelsLoading ? (
+            <div className="grid md:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-xl border border-gray-200 bg-gray-100 shadow-sm overflow-hidden animate-pulse">
+                  <div className="h-40 bg-gray-300"></div>
+                  <div className="p-4 space-y-3">
+                    <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+                    <div className="flex gap-2">
+                      <div className="h-8 bg-gray-300 rounded-full w-24"></div>
+                      <div className="h-8 bg-gray-300 rounded-full w-20"></div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : latestParcels.length > 0 ? (
+            <div className="grid md:grid-cols-3 gap-6">
+              {latestParcels.map((parcel) => (
+                <ParcelCard
+                  key={parcel.parcel_id}
+                  parcel={parcel}
+                  onViewMap={() => {
+                    window.location.href = `/map?q=${parcel.parcel_id}`;
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              <p className="text-lg">No unclaimed land available at the moment.</p>
+              <p className="text-sm mt-2">Check back later for new listings.</p>
+            </div>
+          )}
         </div>
       </section>
 

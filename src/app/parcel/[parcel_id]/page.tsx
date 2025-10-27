@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Carousel, Tag, Spin, Typography, Modal, message } from "antd";
-import { GButton } from "@gal-ui/components";
+import { Carousel, Tag, Spin, Typography, Modal, message, Form } from "antd";
+import { GButton, GTextArea } from "@gal-ui/components";
 import { useParcelDetail } from "@/hooks/gov/useParcels";
 import { useAuth } from "@/contexts/AuthContext";
 import ParcelMap from "@/components/map/ParcelMap";
 import MapLegend from "@/components/map/MapLegend";
 import { createPurchaseTransaction } from "@/client-action/transaction";
+import { createObjection } from "@/client-action/objection";
 import type { ParcelFC, ParcelGeometry } from "@/lib/types/parcel";
 
 const { Title, Text, Paragraph } = Typography;
@@ -22,6 +23,8 @@ export default function ParcelDetailPage() {
   const { parcel, isLoading } = useParcelDetail(parcelId);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [isSubmittingObjection, setIsSubmittingObjection] = useState(false);
+  const [objectionForm] = Form.useForm();
 
   // Placeholder images for carousel
   const images = parcel?.asset_url && parcel.asset_url.length > 0 ? parcel.asset_url : ["/placeholder-land.jpg"];
@@ -105,6 +108,30 @@ export default function ParcelDetailPage() {
       message.error("An error occurred during purchase");
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleObjectionSubmit = async (values: { objection: string }) => {
+    if (!parcel || !user) return;
+
+    setIsSubmittingObjection(true);
+    try {
+      const response = await createObjection({
+        parcel_id: parcel.parcel_id,
+        message: values.objection,
+      });
+
+      if (response.success) {
+        message.success("Objection submitted successfully!");
+        objectionForm.resetFields();
+      } else {
+        message.error(response.error?.message || "Failed to submit objection");
+      }
+    } catch (error) {
+      console.error("Objection submission error:", error);
+      message.error("An error occurred while submitting objection");
+    } finally {
+      setIsSubmittingObjection(false);
     }
   };
 
@@ -365,6 +392,66 @@ export default function ParcelDetailPage() {
           </div>
         </div>
       </div>
+      {/* Objection Form */}
+      {isPublicUser && !isOwner && (
+        <div className="">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <Title level={3} className="mb-4">
+              Submit Land Objection
+            </Title>
+            <Text type="secondary" className="block mb-6">
+              If you have concerns or objections about this land parcel, please submit your message below.
+              Government officials will review your submission and may contact you for further information.
+            </Text>
+
+            <Form
+              form={objectionForm}
+              layout="vertical"
+              onFinish={handleObjectionSubmit}
+              className="max-w-2xl"
+            >
+
+              <Form.Item
+                name="objection"
+                label="Your Objection Message"
+                rules={[
+                  { required: true, message: "Please enter your objection" },
+                  { min: 10, message: "Message must be at least 10 characters" },
+                  { max: 1000, message: "Message must not exceed 1000 characters" }
+                ]}
+              >
+                <GTextArea
+                  customSize="xl"
+                  placeholder="Please describe your objection or concern about this land parcel..."
+                  showCount
+                  maxLength={1000}
+                />
+              </Form.Item>
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg mb-[20px]">
+                <Text className="text-sm text-blue-800">
+                  <strong>Note:</strong> Your objection will be reviewed by government officials.
+                  They may contact you via email or phone for additional information.
+                  Please ensure your contact information is up to date in your profile.
+                </Text>
+              </div>
+              <Form.Item>
+                <button
+                  className={`h-10 px-6 rounded-full font-medium transition-colors ${isSubmittingObjection
+                    ? "bg-gray-400 text-white cursor-not-allowed"
+                    : "bg-brand-primary text-white hover:bg-brand-primary-dark"
+                    }`}
+                  type="submit"
+                  disabled={isSubmittingObjection}
+                >
+                  {isSubmittingObjection ? "Submitting..." : "Submit Objection"}
+                </button>
+              </Form.Item>
+            </Form>
+
+
+          </div>
+        </div>
+      )}
 
       {/* Purchase Confirmation Modal */}
       <Modal
