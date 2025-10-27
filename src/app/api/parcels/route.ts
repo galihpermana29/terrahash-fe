@@ -134,6 +134,7 @@ export async function POST(request: NextRequest) {
       owner_id,
       notes,
       asset_url,
+      certif_url
     } = body;
 
     // Validate required fields
@@ -196,6 +197,7 @@ export async function POST(request: NextRequest) {
         owner_id: status === "OWNED" ? owner_id : null,
         notes,
         asset_url: asset_url || null,
+        certif_url: certif_url || null,
       })
       .select(
         `

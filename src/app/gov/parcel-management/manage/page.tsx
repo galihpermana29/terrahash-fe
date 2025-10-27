@@ -18,7 +18,8 @@ import { useParcelForm } from "@/hooks/gov/useParcelForm";
 import { useParcels, useParcelDetail } from "@/hooks/gov/useParcels";
 import AuthGuard from "@/components/auth/AuthGuard";
 import { useWatch } from "antd/es/form/Form";
-import { createTopicWithMemo, updateTopicMemo } from "@/lib/hedera/utils";
+import { mintNFT } from "@/lib/hedera/utils";
+import { uploadMemoDataToIPFS } from "@/lib/utils/ipfs";
 
 // Countries in Africa (sample list)
 const AFRICAN_COUNTRIES = [
@@ -74,6 +75,7 @@ function ManageParcelContent() {
   );
 
   const asset_url = useWatch('asset_url', form);
+  const certif_url = useWatch('certif_url', form);
 
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [selectedState, setSelectedState] = useState<string>("");
@@ -97,6 +99,7 @@ function ManageParcelContent() {
         notes: existingParcel.notes || "",
         owner_wallet: existingParcel.owner?.wallet_address || "",
         asset_url: existingParcel.asset_url || [],
+        certif_url: existingParcel.certif_url || "",
       });
 
       // Set local state
@@ -122,7 +125,7 @@ function ManageParcelContent() {
     } else if (!isEditMode && !isDataLoaded) {
       // Create mode: auto-generate parcel ID
       form.setFieldsValue({
-        // parcel_id: `PARCEL-${Date.now()}`,
+        parcel_id: `PARCEL-${Date.now()}`,
         status: "UNCLAIMED",
       });
       setIsDataLoaded(true);
@@ -163,40 +166,48 @@ function ManageParcelContent() {
 
   const handleSubmit = async (values: any) => {
     try {
-      let parcelId = values.parcel_id;
+      const payload = buildFormPayload(values);
 
-      // Common memoData preparation for both create and edit modes
+      // Common memoData
+      // a preparation for both create and edit modes
       const memoData = {
-        ...values,
-        area_m2: area,
-        // Remove unnecessary fields
-        parcel_id: undefined,
-        status: undefined,
-        owner_wallet: undefined,
-        notes: undefined,
-        asset_url: undefined,
-        owner: undefined,
+        format: "HIP412@2.0.0",
+        name: values.parcel_id,
+        creator: "Gov.terrahash",
+        description: values.notes || "No description provided",
+        image: values.certif_url,
+        type: values.certif_url?.endsWith(".png") ? "image/png" : "image/jpeg",
+        files: (asset_url ?? []).map((url: string, i: number) => ({
+          uri: url,
+          type: url.endsWith(".png") ? "image/png" : "image/jpeg",
+          is_default_file: i === 0 // file pertama dianggap utama
+        })),
+        attributes: [
+          { trait_type: "Country", value: values.country },
+          { trait_type: "State", value: values.state },
+          { trait_type: "City", value: values.city },
+          { trait_type: "Area (m²)", value: area },
+          { 
+            trait_type: "GeoPoint", 
+            value: {
+              type: geometry.type,
+              coordinates: geometry.geometry.coordinates
+            }
+          }
+        ]
       } as const;
 
-      const cleanMemoData = Object.fromEntries(
-        Object.entries(memoData).filter(([_, v]) => v !== undefined)
-      );
-
-      if (!isEditMode) {
-        // Create mode
-        const topicId = await createTopicWithMemo(JSON.stringify(cleanMemoData));
-        const topicNumber = topicId.split(".").pop();
-        parcelId = `PARCEL-${topicNumber}`;
-      } else {
-        // Edit mode
-        const topicNumber = parcelId.replace("PARCEL-", "");
-        const topicId = `0.0.${topicNumber}`;
-        await updateTopicMemo(topicId, JSON.stringify(cleanMemoData));
-        console.log("[Submit] Hedera topic memo updated:", topicId);
+      if (!payload) {
+        return;
       }
 
-      // Build payload and submit to backend
-      const payload = buildFormPayload({ ...values, parcel_id: parcelId });
+      const { metadataIpfsUri } = await uploadMemoDataToIPFS(memoData);
+      
+      if (!isEditMode) {
+        await mintNFT(metadataIpfsUri, values.owner_wallet || "0.0.7131452" );
+      } else {
+        console.log("[Submit] Hedera topic memo updated:", parcelId);
+      }
       
       if (isEditMode) {
         await updateParcel({ parcelId, data: payload });
@@ -380,6 +391,22 @@ function ManageParcelContent() {
                 customSize="xl"
                 placeholder="Additional information, paperwork reference, etc."
                 rows={4}
+              />
+            </Form.Item>
+            
+            {/* Certificate Upload */}
+            <Form.Item
+              label="NFT Certificate"
+              name="certif_url"
+              tooltip="Upload images of the NFT certificate"
+              // rules={[{ required: true }]}
+            >
+              <DraggerUpload
+                profileImageURL={certif_url}
+                formItemName="certif_url"
+                form={form}
+                limit={1}
+                multiple={false}
               />
             </Form.Item>
 

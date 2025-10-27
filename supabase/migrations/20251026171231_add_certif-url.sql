@@ -1,0 +1,1 @@
+ALTER TABLE parcels ADD COLUMN certif_url TEXT;
