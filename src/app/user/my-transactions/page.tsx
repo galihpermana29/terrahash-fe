@@ -355,20 +355,39 @@ const UserTransactionHistoryPage = () => {
                   <div>
                     <Text type="secondary">Transaction Type</Text>
                     <div className="font-medium">
-                      {selectedTransaction.buyer_id === user?.id ? "Purchase" : "Sale"}
+                        {
+                          selectedTransaction.type === "PURCHASE"
+                            ? (selectedTransaction.buyer_id === user?.id ? "Purchase" : "Sale")
+                            : (selectedTransaction.buyer_id === user?.id ? "Lease" : "Lessee")
+                        }
                     </div>
                   </div>
+                  
                 </div>
+
 
                 {selectedTransaction.transaction_hash && (
                   <div>
-                    <Text type="secondary">Blockchain Transaction Hash</Text>
-                    <div className="font-mono text-sm bg-gray-100 p-2 rounded break-all">
-                      {selectedTransaction.transaction_hash}
-                    </div>
+                  <Text type="secondary">Blockchain Transaction Hash</Text>
+                  <div className="flex items-center gap-2 font-mono text-sm bg-gray-100 p-2 rounded break-all">
+                    <span>{selectedTransaction.transaction_hash}</span>
+                    <Button
+                    type="link"
+                    href={`https://hashscan.io/testnet/transaction/${selectedTransaction.transaction_hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    icon={
+                      <svg width="1em" height="1em" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M10.5 2H14v3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M6.5 9.5L14 2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M13 9.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    }
+                    aria-label="Open Hashscan"
+                    />
+                  </div>
                   </div>
                 )}
-
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Text type="secondary">Created</Text>

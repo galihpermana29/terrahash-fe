@@ -3,8 +3,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/utils/session";
 import type { ApiResponse } from "@/lib/types/response";
 import type { TransactionResponse } from "@/lib/types/transaction";
-import { createTopicWithMemo, submitMessageToTopic, TransferTokentoBuyer } from "@/lib/hedera/h";
-
+import {  submitMessageToTopic, TransferTokentoBuyer } from "@/lib/hedera/h";
 /**
  * Create a new purchase transaction
  * This endpoint handles the complete purchase flow for web2
@@ -110,8 +109,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
     let txStatus = "SKIPPED";
     let status_hash: string | null = null;
+    let transactionType = "PURCHASE"; // default for SALE
 
-    if (listing.type == "SALE") {
+    if (listing.type === "SALE") {
       const result = await TransferTokentoBuyer(
         listing.parcel.parcel_id.split('-').pop()!,
         listing.parcel.owner.wallet_address,
@@ -120,11 +120,83 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
       status_hash = result.status_hash;
       txStatus = result.status === "SUCCESS" ? "COMPLETED" : "FAILED";
+      transactionType = "PURCHASE";
     }
+    if (listing.type === "LEASE") {
+      const leasePeriod = listing.lease_period;
+      const startDate = new Date();
 
-    // if (listing.type == "LEASE") {
-    //   await submitMessageToTopic();
-    // }
+      // Defensive check for leasePeriod 
+      let monthsToAdd = 0;
+      switch (leasePeriod) {
+      case "1_MONTH":
+        monthsToAdd = 1;
+        break;
+      case "6_MONTHS":
+        monthsToAdd = 6;
+        break;
+      case "12_MONTHS":
+        monthsToAdd = 12;
+        break;
+      default:
+        return NextResponse.json({
+        success: false,
+        error: {
+          code: "INVALID_LEASE_PERIOD",
+          message: `Unknown lease period: ${leasePeriod}`
+        }
+        }, { status: 400 });
+      }
+
+      // Calculate end date safely
+      const endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + monthsToAdd);
+
+      // Defensive: listing.topic_id and listing.parcel.parcel_id existence
+      if (!listing.parcel?.parcel_id) {
+        return NextResponse.json({
+          success: false,
+          error: {
+          code: "MISSING_PARCEL",
+          message: "Lease topic or parcel id missing"
+          }
+        }, { status: 400 });
+      }
+
+      if (!listing.topic_id ) {
+      return NextResponse.json({
+        success: false,
+        error: {
+        code: "MISSING_TOPIC",
+        message: "Lease topic or parcel id missing"
+        }
+      }, { status: 400 });
+    }
+      // For hedera submit
+      const message = `Lease started by buyer ${buyer.wallet_address} from ${startDate.toISOString().replace('T', ' ').replace('Z', '').split('.')[0]} until ${endDate.toISOString().replace('T', ' ').replace('Z', '').split('.')[0]}`;
+
+      let result;
+      try {
+      result = await submitMessageToTopic(
+        listing.topic_id,
+        message,
+        listing.parcel.parcel_id
+      );
+      } catch (e) {
+      console.error("submitMessageToTopic error:", e);
+      return NextResponse.json({
+        success: false,
+        error: {
+        code: "HEDERA_SUBMIT_FAILED",
+        message: "Failed to submit lease message to Hedera"
+        }
+      }, { status: 500 });
+      }
+
+      status_hash = result?.transactionId || null;
+      txStatus = result?.status === "SUCCESS" ? "COMPLETED" : "FAILED";
+      transactionType = "LEASE";
+    }
 
     // Save transaction in Supabase
     const { data: transaction, error: transactionError } = await supabase
@@ -134,7 +206,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
         buyer_id: buyer.id,
         seller_id: listing.parcel.owner_id,
         parcel_id: listing.parcel.parcel_id,
-        type: "PURCHASE",
+        type: transactionType,
         status: txStatus,
         amount_kes: listing.price_kes,
         transaction_hash: status_hash
@@ -159,7 +231,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }, { status: 500 });
     }
 
-    if (txStatus === "COMPLETED") {
+    if (txStatus === "COMPLETED" && listing.type === "SALE") {
       const { error: parcelUpdateError } = await supabase
         .from("parcels")
         .update({ 

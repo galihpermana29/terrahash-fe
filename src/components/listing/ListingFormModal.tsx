@@ -7,6 +7,7 @@ import { useListingMutations } from "@/hooks/useListings";
 import type { Parcel, Listing } from "@/lib/types/parcel";
 import { approveNftAllowance, connectHederaSnap } from "@/lib/hedera/allowance";
 import { getHederaClient } from "@/lib/hedera/client";
+import { createTopicWithMemo } from "@/lib/hedera/h";
 
 interface ListingFormModalProps {
   open: boolean;
@@ -45,7 +46,11 @@ export default function ListingFormModal({
           nftTokenId: nftTokenId || "",
           approveAll: true,
         });
-        console.log('serialNumbers test:', [Number(parcel.parcel_id.split('-').pop())])
+        
+        const topicMemo = `Lease Record for : ${parcel.parcel_id}`;
+        const topicId = await createTopicWithMemo(topicMemo);
+
+        console.log(topicId);
         await createListing({
           parcel_id: parcel.parcel_id,
           type: listingType,
@@ -54,6 +59,7 @@ export default function ListingFormModal({
           description: values.description,
           terms: values.terms,
           contact_phone: values.contact_phone,
+          topic_id: topicId,
         });
       } else if (existingListing) {
         await updateListing(existingListing.id, {

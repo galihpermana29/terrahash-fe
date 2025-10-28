@@ -1,4 +1,4 @@
-import { AccountId, AccountInfoQuery, TokenMintTransaction, TransferTransaction, TokenUpdateNftsTransaction, TokenAssociateTransaction, PrivateKey, NftId, TopicCreateTransaction } from "@hashgraph/sdk";
+import { AccountId, AccountInfoQuery, TokenMintTransaction, TransferTransaction, TokenUpdateNftsTransaction, TokenAssociateTransaction, PrivateKey, NftId, TopicCreateTransaction, TopicMessageSubmitTransaction } from "@hashgraph/sdk";
 import Long from "long";
 import { getHederaClient } from "./client";
 import { TransactionId } from "@hashgraph/sdk";
@@ -19,17 +19,18 @@ export async function getHederaAccountIdFromEvmAddress(address: string) {
   }
 }
 
-export function getEvmAddressFromHederaAccountId(accountId: string) {
+export function getEvmAddressFromHederaAccountId(accountId: string): string | null {
   if (!accountId) return null;
 
   try {
-    const rawEvm = AccountId.fromString(accountId).toEvmAddress();
-    const evmAddress = "0x" + rawEvm;
-    return evmAddress;
+    const evmAddress = AccountId.fromString(accountId).toEvmAddress();
+    // Add 0x prefix for standard EVM address format
+    return `0x${evmAddress}`;
   } catch (err) {
     return null;
   }
 }
+
 
 export async function TransferToken(serialNumber: string, senderAccountId: AccountId, receiverAccountId: AccountId) {
     try {
@@ -126,11 +127,30 @@ export async function createTopicWithMemo(memo: string) {
       .setAdminKey(operatorKey.publicKey);
     const response = await tx.execute(client);
     const receipt = await response.getReceipt(client);
-    const hash = response.transactionId.toString();
-    const status = receipt.status.toString();
-    return { status_hash: hash, status };
+    const topicId = receipt.topicId.toString();
+    return topicId;
   } catch (err: any) {
     console.error("Failed to create Hedera topic:", err);
     throw new Error("Could not create Hedera topic");
+  }
+}
+
+export async function submitMessageToTopic(topicId: string, message: string) {
+  try {
+    const tx = new TopicMessageSubmitTransaction()
+      .setTopicId(topicId)
+      .setMessage(message)
+      .setTransactionMemo(`Message to topic ${topicId}`);
+
+    const response = await tx.execute(client);
+    const receipt = await response.getReceipt(client);
+
+    return {
+      transactionId: response.transactionId.toString(),
+      status: receipt.status.toString(),
+    };
+  } catch (err: any) {
+    console.error(`Failed to submit message to topic ${topicId}:`, err);
+    throw new Error("Could not submit message to Hedera topic");
   }
 }

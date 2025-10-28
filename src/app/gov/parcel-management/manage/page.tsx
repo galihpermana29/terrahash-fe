@@ -207,9 +207,6 @@ function ManageParcelContent() {
         const parcelId = `PARCEL-${cleanedTokenId}-${serialNumber}`;
         payload.parcel_id = parcelId;
 
-        const topicMemo = { initial_land_data : { parcel_id: parcelId, metadata_uri: metadataIpfsUri }};
-
-        await createTopicWithMemo(JSON.stringify(topicMemo));
         await createParcel(payload);
       } else {
         const existingSerial = values.parcel_id?.split("-")?.pop();

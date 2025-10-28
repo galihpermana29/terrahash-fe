@@ -196,6 +196,23 @@ const MyLandPage = () => {
     },
   ];
 
+  columns[0].render = (parcel_id: string) => {
+    const parts = parcel_id.split("-");
+    const formattedId = `0.0.${parts[1]}/${parts[2]}`;
+    return (
+      <a
+        href={`https://hashscan.io/testnet/token/${formattedId}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-500 hover:underline"
+      >
+        {parcel_id}
+      </a>
+    );
+  };
+
+
+
   return (
     <AuthGuard requiredUserType="PUBLIC" redirectTo="/">
       <div className="p-6">
