@@ -92,33 +92,8 @@ export default function Home() {
             <h2 className="font-semibold text-brand-primary text-[24px] md:text-[32px] lg:text-[40px]">Latest Unclaimed Land</h2>
             <Link href="/map" className="text-brand-gold hover:opacity-80">View all on map →</Link>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {leased.map((p) => (
-              <div key={p.id} className="rounded-xl border border-gray-200 bg-cream shadow-sm overflow-hidden">
-                <div className="relative h-44">
-                  <Image src={p.image} alt={p.id} fill className="object-cover" />
-                  <span className="absolute top-3 left-3 text-xs px-2 py-1 rounded-full bg-brand-gold text-text-dark shadow">
-                    LEASED
-                  </span>
-                </div>
-                <div className="p-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-brand-primary">{p.id}</h3>
-                    <span className="text-brand-gold font-medium">KES {p.priceKes.toLocaleString()}</span>
-                  </div>
-                  <p className="mt-1 text-sm text-gray-600">{p.location} • {formatAcres(p.areaM2)} acres</p>
-                  <div className="mt-4 flex gap-2">
-                    <Link href={`/map?q=${p.id}`} className="inline-flex">
-                      <button className="h-10 px-4 rounded-full bg-brand-primary text-white hover:bg-brand-primary-dark">View on Map</button>
-                    </Link>
-                    <Link href={`/map?q=${p.id}`} className="inline-flex">
-                      <button className="h-10 px-4 rounded-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">Details</button>
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : latestParcels.length > 0 ? (
+          {/* You might have an unused or incorrectly placed section for leased parcels here; remove or adapt as needed */}
+          {Array.isArray(latestParcels) && latestParcels.length > 0 ? (
             <div className="grid md:grid-cols-3 gap-6">
               {latestParcels.map((parcel) => (
                 <ParcelCard
