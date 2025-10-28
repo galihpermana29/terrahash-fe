@@ -61,16 +61,6 @@ export default function ParcelDetailPage() {
       return;
     }
 
-    // Disable lease functionality temporarily
-    if (parcel.listing.type === "LEASE") {
-      message.info("Lease functionality is coming soon!");
-      return;
-    }
-
-    // Only handle SALE for now
-    if (parcel.listing.type === "SALE") {
-      setShowPurchaseModal(true);
-    }
   };
 
   const handlePurchaseConfirm = async () => {
@@ -78,19 +68,6 @@ export default function ParcelDetailPage() {
 
     setIsProcessing(true);
     try {
-      console.log(parcel.parcel_id.split('-').pop()!,
-        parcel.owner!.wallet_address,
-        user.wallet_address
-      );
-
-      await TransferTokentoBuyer(
-        parcel.parcel_id.split('-').pop()!,
-        parcel.owner!.wallet_address,
-        user.wallet_address
-      );
-
-      console.log("Token transfer to buyer successful");
-      console.log(parcel.listing.id, parcel.owner.wallet_address, user.wallet_address);
 
       const response = await createPurchaseTransaction({
         listing_id: parcel.listing.id,

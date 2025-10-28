@@ -3,6 +3,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/utils/session";
 import type { ApiResponse } from "@/lib/types/response";
 import type { TransactionResponse } from "@/lib/types/transaction";
+import { createTopicWithMemo, submitMessageToTopic, TransferTokentoBuyer } from "@/lib/hedera/h";
 
 /**
  * Create a new purchase transaction
@@ -79,17 +80,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }, { status: 404 });
     }
 
-    // Validate listing type (only SALE for now)
-    if (listing.type !== "SALE") {
-      return NextResponse.json({
-        success: false,
-        error: {
-          code: "INVALID_LISTING_TYPE",
-          message: "Only SALE listings are supported currently"
-        }
-      }, { status: 400 });
-    }
-
     // Check if user is not the owner
     if (listing.parcel.owner_id === user.id) {
       return NextResponse.json({
@@ -118,8 +108,25 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }, { status: 404 });
     }
 
-    // Create transaction with COMPLETED status (web2 only for now)
-    // TODO: Web3 engineer should modify this to handle blockchain transaction
+    let txStatus = "SKIPPED";
+    let status_hash: string | null = null;
+
+    if (listing.type == "SALE") {
+      const result = await TransferTokentoBuyer(
+        listing.parcel.parcel_id.split('-').pop()!,
+        listing.parcel.owner.wallet_address,
+        user.wallet_address
+      );
+
+      status_hash = result.status_hash;
+      txStatus = result.status === "SUCCESS" ? "COMPLETED" : "FAILED";
+    }
+
+    // if (listing.type == "LEASE") {
+    //   await submitMessageToTopic();
+    // }
+
+    // Save transaction in Supabase
     const { data: transaction, error: transactionError } = await supabase
       .from("transactions")
       .insert({
@@ -128,12 +135,18 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
         seller_id: listing.parcel.owner_id,
         parcel_id: listing.parcel.parcel_id,
         type: "PURCHASE",
-        status: "COMPLETED", // For web2 flow - web3 engineer should change this logic
+        status: txStatus,
         amount_kes: listing.price_kes,
-        // transaction_hash will be added by web3 integration
+        transaction_hash: status_hash
       })
       .select()
       .single();
+
+    if (transactionError) {
+      console.error("Supabase insert error:", transactionError);
+      throw new Error("Transaction recording failed");
+    }
+
 
     if (transactionError) {
       console.error("Transaction creation error:", transactionError);
@@ -146,33 +159,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }, { status: 500 });
     }
 
-    // TODO: Web3 integration point
-    // The web3 engineer should:
-    // 1. Create transaction with "PENDING" status initially
-    // 2. Execute smart contract transaction on Hedera
-    // 3. Update transaction with blockchain hash and final status
-    console.log("🔗 [WEB3 TODO] Execute blockchain transaction:", {
-      transactionId: transaction.id,
-      buyerWallet: buyer.wallet_address,
-      sellerWallet: listing.parcel.owner.wallet_address,
-      amount: listing.price_kes,
-      parcelId: listing.parcel.parcel_id
-    });
+    if (txStatus === "COMPLETED") {
+      const { error: parcelUpdateError } = await supabase
+        .from("parcels")
+        .update({ 
+          owner_id: buyer.id,
+          status: "OWNED",
+          updated_at: new Date().toISOString()
+        })
+        .eq("parcel_id", listing.parcel.parcel_id);
 
-    // Update parcel ownership (for web2 flow)
-    // TODO: Web3 engineer should move this to after blockchain confirmation
-    const { error: parcelUpdateError } = await supabase
-      .from("parcels")
-      .update({ 
-        owner_id: buyer.id,
-        status: "OWNED",
-        updated_at: new Date().toISOString()
-      })
-      .eq("parcel_id", listing.parcel.parcel_id);
-
-    if (parcelUpdateError) {
-      console.error("Parcel update error:", parcelUpdateError);
-      // Don't fail the transaction, but log the error
+      if (parcelUpdateError) {
+        console.error("Parcel update error:", parcelUpdateError);
+      }
     }
 
     // Deactivate the listing

@@ -1,4 +1,4 @@
-import { AccountId, AccountInfoQuery, TokenMintTransaction, TransferTransaction, TokenUpdateNftsTransaction, TokenAssociateTransaction, PrivateKey, NftId } from "@hashgraph/sdk";
+import { AccountId, AccountInfoQuery, TokenMintTransaction, TransferTransaction, TokenUpdateNftsTransaction, TokenAssociateTransaction, PrivateKey, NftId, TopicCreateTransaction } from "@hashgraph/sdk";
 import Long from "long";
 import { getHederaClient } from "./client";
 import { TransactionId } from "@hashgraph/sdk";
@@ -52,10 +52,6 @@ export async function TransferTokentoBuyer(serialNumber: string, senderAccountId
       const nftId = NftId.fromString(`${nftTokenId}/${serialNumber}`);
       const sender = AccountId.fromString(senderAccountId);
       const receiver = AccountId.fromString(receiverAccountId);
-
-      console.log(nftId.toString(), "nftId?");
-      console.log(sender.toString(), "sender?");
-      console.log(receiver.toString(), "receiver?");
       const transferTx = await new TransferTransaction()
         .addApprovedNftTransfer(nftId, sender, receiver)
         .setTransactionId(TransactionId.generate(TREASURY_ID))
@@ -64,7 +60,9 @@ export async function TransferTokentoBuyer(serialNumber: string, senderAccountId
 
       const transferResponse = await transferTx.execute(client);
       const receipt = await transferResponse.getReceipt(client);
-      return receipt.status.toString();
+      const hash = transferResponse.transactionId.toString();
+      const status = receipt.status.toString();
+      return { status_hash: hash, status };
     } catch (err) {
       console.log(err);
       throw new Error("Could not transfer NFT");
@@ -121,3 +119,18 @@ export async function updateNFTMetadata(serialNumber: string, newMetadata: strin
   }
 }
 
+export async function createTopicWithMemo(memo: string) {
+  try {
+    const tx = new TopicCreateTransaction()
+      .setTopicMemo(memo)
+      .setAdminKey(operatorKey.publicKey);
+    const response = await tx.execute(client);
+    const receipt = await response.getReceipt(client);
+    const hash = response.transactionId.toString();
+    const status = receipt.status.toString();
+    return { status_hash: hash, status };
+  } catch (err: any) {
+    console.error("Failed to create Hedera topic:", err);
+    throw new Error("Could not create Hedera topic");
+  }
+}

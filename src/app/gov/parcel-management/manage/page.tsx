@@ -20,7 +20,7 @@ import AuthGuard from "@/components/auth/AuthGuard";
 import { useWatch } from "antd/es/form/Form";
 import { uploadMemoDataToIPFS } from "@/lib/utils/ipfs";
 import { getHederaClient } from "@/lib/hedera/client";
-import { mintNFT, updateNFTMetadata } from "@/lib/hedera/h";
+import { createTopicWithMemo, mintNFT, updateNFTMetadata } from "@/lib/hedera/h";
 
 // Countries in Africa (sample list)
 const AFRICAN_COUNTRIES = [
@@ -207,6 +207,9 @@ function ManageParcelContent() {
         const parcelId = `PARCEL-${cleanedTokenId}-${serialNumber}`;
         payload.parcel_id = parcelId;
 
+        const topicMemo = { initial_land_data : { parcel_id: parcelId, metadata_uri: metadataIpfsUri }};
+
+        await createTopicWithMemo(JSON.stringify(topicMemo));
         await createParcel(payload);
       } else {
         const existingSerial = values.parcel_id?.split("-")?.pop();

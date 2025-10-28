@@ -41,7 +41,7 @@ export default function ListingFormModal({
       if (mode === "create") {
         await connectHederaSnap()
         await approveNftAllowance({
-          spenderAccountId: "0.0.7136374",
+          spenderAccountId: treasuryAccountId,
           nftTokenId: nftTokenId || "",
           approveAll: true,
         });
