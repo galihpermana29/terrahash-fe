@@ -3,7 +3,7 @@ import Long from "long";
 import { getHederaClient } from "./client";
 import { TransactionId } from "@hashgraph/sdk";
 
-const { client, operatorKey, nftTokenId: NFT_TOKEN_ID, treasuryAccountId, metadataKey } = getHederaClient();
+const { client, operatorKey, nftTokenId, treasuryAccountId, metadataKey } = getHederaClient();
 const TREASURY_ID = AccountId.fromString(treasuryAccountId);
 export async function getHederaAccountIdFromEvmAddress(address: string) {
   if (!address) return null;
@@ -34,7 +34,7 @@ export function getEvmAddressFromHederaAccountId(accountId: string) {
 export async function TransferToken(serialNumber: string, senderAccountId: AccountId, receiverAccountId: AccountId) {
     try {
       const transferTx = await new TransferTransaction()
-        .addNftTransfer(NFT_TOKEN_ID, serialNumber, senderAccountId, receiverAccountId)
+        .addNftTransfer(nftTokenId, serialNumber, senderAccountId, receiverAccountId)
         .freezeWith(client)
         .sign(operatorKey);
 
@@ -47,12 +47,19 @@ export async function TransferToken(serialNumber: string, senderAccountId: Accou
     }
 }
 
-export async function TransferTokentoBuyer(serialNumber: string, senderAccountId: AccountId, receiverAccountId: AccountId) {
+export async function TransferTokentoBuyer(serialNumber: string, senderAccountId: string, receiverAccountId: string) {
     try {
-      const nftId = NftId.fromString(`${NFT_TOKEN_ID}/${serialNumber}`);
+      const nftId = NftId.fromString(`${nftTokenId}/${serialNumber}`);
+      const sender = AccountId.fromString(senderAccountId);
+      const receiver = AccountId.fromString(receiverAccountId);
+
+      console.log(nftId.toString(), "nftId?");
+      console.log(sender.toString(), "sender?");
+      console.log(receiver.toString(), "receiver?");
       const transferTx = await new TransferTransaction()
-        .addApprovedNftTransfer(nftId, senderAccountId, receiverAccountId)
-        .setTransactionId(TransactionId.generate(treasuryAccountId))
+        .addApprovedNftTransfer(nftId, sender, receiver)
+        .setTransactionId(TransactionId.generate(TREASURY_ID))
+        .freezeWith(client)
         .sign(operatorKey);
 
       const transferResponse = await transferTx.execute(client);
@@ -69,7 +76,7 @@ export async function mintNFT(memo: string, owner_wallet: any): Promise<string> 
     const receiverAccountId = AccountId.fromString(owner_wallet);
 
     const mintTx = await new TokenMintTransaction()
-      .setTokenId(NFT_TOKEN_ID)
+      .setTokenId(nftTokenId)
       .setMetadata([Buffer.from(memo)])
       .freezeWith(client)
       .sign(operatorKey);
@@ -94,7 +101,7 @@ export async function updateNFTMetadata(serialNumber: string, newMetadata: strin
     const receiverAccountId = AccountId.fromString(owner_wallet);
 
     const tx = new TokenUpdateNftsTransaction()
-      .setTokenId(NFT_TOKEN_ID)
+      .setTokenId(nftTokenId)
       .setSerialNumbers([Long.fromString(serialNumber)])
       .setMetadata(metadataBuffer)
       .freezeWith(client);

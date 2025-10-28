@@ -10,7 +10,7 @@ import ParcelMap from "@/components/map/ParcelMap";
 import MapLegend from "@/components/map/MapLegend";
 import type { ParcelFC, ParcelGeometry } from "@/lib/types/parcel";
 import { createPurchaseTransaction } from "@/client-action/transaction";
-import { TransferToken } from "@/lib/hedera/h";
+import { TransferToken, TransferTokentoBuyer } from "@/lib/hedera/h";
 import { getHederaClient } from "@/lib/hedera/client";
 import { AccountId } from "@hashgraph/sdk";
 
@@ -78,28 +78,27 @@ export default function ParcelDetailPage() {
 
     setIsProcessing(true);
     try {
-      
+      console.log(parcel.parcel_id.split('-').pop()!,
+        parcel.owner!.wallet_address,
+        user.wallet_address
+      );
+
+      await TransferTokentoBuyer(
+        parcel.parcel_id.split('-').pop()!,
+        parcel.owner!.wallet_address,
+        user.wallet_address
+      );
+
+      console.log("Token transfer to buyer successful");
+      console.log(parcel.listing.id, parcel.owner.wallet_address, user.wallet_address);
+
       const response = await createPurchaseTransaction({
         listing_id: parcel.listing.id,
       });
       if (response.success && response.data) {
         message.success("Purchase completed successfully!");
         setShowPurchaseModal(false);
-        await TransferToken(
-          nftTokenId!,
-          parcel.parcel_id.split('-').pop()!,
-          AccountId.fromString(response.data.listing.seller_wallet),
-          AccountId.fromString(user.wallet_address)
-        );
 
-        console.log("🔗 [WEB3 TODO] Execute blockchain transaction for:", {
-          transactionId: response.data.transaction.id,
-          listingId: parcel.listing.id,
-          amount: parcel.listing.price_kes,
-          buyer: user.wallet_address,
-          seller: response.data.listing.seller_wallet
-        });
-        // Redirect to transaction history
         router.push("/user/my-transactions");
       } else {
         message.error(response.error?.message || "Purchase failed");
