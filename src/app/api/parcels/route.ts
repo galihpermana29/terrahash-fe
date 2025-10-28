@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status"); // UNCLAIMED or OWNED
     const search = searchParams.get("search"); // Search by parcel_id
     const userId = searchParams.get("user_id"); // Search by user_id
+    const limit = searchParams.get("limit"); // Limit number of results
 
     let query = supabaseServer
       .from("parcels")
@@ -53,6 +54,14 @@ export async function GET(request: NextRequest) {
 
     if (userId) {
       query = query.eq("owner_id", userId);
+    }
+
+    // Apply limit if specified
+    if (limit) {
+      const limitNum = parseInt(limit, 10);
+      if (!isNaN(limitNum) && limitNum > 0) {
+        query = query.limit(limitNum);
+      }
     }
 
     const { data: parcels, error } = await query;

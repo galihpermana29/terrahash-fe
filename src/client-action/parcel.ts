@@ -89,6 +89,24 @@ export async function toggleParcelStatus(
 }
 
 /**
+ * Get latest unclaimed parcels for homepage
+ */
+export async function getLatestUnclaimedParcels(
+  limit: number = 6
+): Promise<ApiResponse<{ parcels: Parcel[] }>> {
+  const queryParams = new URLSearchParams();
+  queryParams.append("status", "UNCLAIMED");
+  queryParams.append("limit", limit.toString());
+
+  const response = await fetch(`/api/parcels?${queryParams.toString()}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  return response.json();
+}
+
+/**
  * Delete parcel
  */
 export async function deleteParcel(
