@@ -26,11 +26,11 @@ export default function ListingFormModal({
   mode,
 }: ListingFormModalProps) {
   const [form] = Form.useForm();
-  const { createListing, updateListing, isCreating, isUpdating } = useListingMutations();
+  const { createListing, updateListing } = useListingMutations();
   const [listingType, setListingType] = useState<"SALE" | "LEASE">(
     existingListing?.type || "SALE"
   );
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const leasePeriodOptions = [
     { value: "1_MONTH", label: "Monthly (Pay every month)" },
     { value: "6_MONTHS", label: "Every 6 Months" },
@@ -38,6 +38,7 @@ export default function ListingFormModal({
   ];
 
   const handleSubmit = async (values: any) => {
+    setIsSubmitting(true);
     try {
       if (mode === "create") {
         await connectHederaSnap()
@@ -74,6 +75,8 @@ export default function ListingFormModal({
       onClose();
     } catch (error) {
       console.error("Error submitting listing:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -284,7 +287,7 @@ export default function ListingFormModal({
           <GButton
             btn_type="primary"
             htmlType="submit"
-            loading={isCreating || isUpdating}
+            loading={isSubmitting}
           >
             {mode === "create" ? "Create Listing" : "Update Listing"}
           </GButton>

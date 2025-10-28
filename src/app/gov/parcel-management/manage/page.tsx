@@ -70,7 +70,7 @@ function ManageParcelContent() {
     buildFormPayload,
   } = useParcelForm();
 
-  const { createParcel, updateParcel, isCreating, isUpdating } = useParcels();
+  const { createParcel, updateParcel } = useParcels();
   const { parcel: existingParcel, isLoading: isLoadingParcel } = useParcelDetail(
     isEditMode ? parcelId : null
   );
@@ -83,6 +83,7 @@ function ManageParcelContent() {
   const [status, setStatus] = useState<"UNCLAIMED" | "OWNED">("UNCLAIMED");
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [loadedGeometry, setLoadedGeometry] = useState<GeoJSON.Feature<GeoJSON.Polygon> | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Load existing parcel data in edit mode
   useEffect(() => {
@@ -166,6 +167,7 @@ function ManageParcelContent() {
   };
 
   const handleSubmit = async (values: any) => {
+    setIsSubmitting(true);
     try {
       const payload = buildFormPayload(values);
       if (!payload) {
@@ -218,6 +220,8 @@ function ManageParcelContent() {
       router.push("/gov/parcel-management");
     } catch (err) {
       console.error("[Submit] Error submitting parcel:", err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -427,17 +431,34 @@ function ManageParcelContent() {
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-4">
-            <GButton
-              btn_type="secondary-gray"
-              onClick={() => router.push("/gov/parcel-management")}
-            >
-              Cancel
-            </GButton>
-            <GButton btn_type="primary" htmlType="submit">
-              {isEditMode ? "Update Parcel" : "Create Parcel"}
-            </GButton>
-          </div>
+            {isSubmitting ? (
+              <div className="flex justify-end w-full">
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
+                  <span className="text-blue-700 font-medium">
+                    {isEditMode ? "Updating Parcel..." : "Creating Parcel..."}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-end gap-4">
+                <GButton
+                  btn_type="secondary-gray"
+                  onClick={() => router.push("/gov/parcel-management")}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </GButton>
+                <GButton
+                  btn_type="primary"
+                  htmlType="submit"
+                  loading={isSubmitting}
+                  disabled={isSubmitting}
+                >
+                  {isEditMode ? "Update Parcel" : "Create Parcel"}
+                </GButton>
+              </div>
+            )}
         </Form>
       </div>
     </AuthGuard>
