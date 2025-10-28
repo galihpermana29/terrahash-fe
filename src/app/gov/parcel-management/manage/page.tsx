@@ -18,9 +18,9 @@ import { useParcelForm } from "@/hooks/gov/useParcelForm";
 import { useParcels, useParcelDetail } from "@/hooks/gov/useParcels";
 import AuthGuard from "@/components/auth/AuthGuard";
 import { useWatch } from "antd/es/form/Form";
-import { mintNFT, updateNFTMetadata } from "@/lib/hedera/utils";
 import { uploadMemoDataToIPFS } from "@/lib/utils/ipfs";
 import { getHederaClient } from "@/lib/hedera/client";
+import { mintNFT, updateNFTMetadata } from "@/lib/hedera/h";
 
 // Countries in Africa (sample list)
 const AFRICAN_COUNTRIES = [

@@ -1,5 +1,5 @@
 import useSWR from "swr";
-import { getHederaAccountIdFromEvmAddress } from "@/lib/hedera/utils";
+import { getHederaAccountIdFromEvmAddress } from "@/lib/hedera/h";
 
 export function useHederaAccountId(address?: string) {
   const shouldFetch = !!address && address.startsWith("0x");

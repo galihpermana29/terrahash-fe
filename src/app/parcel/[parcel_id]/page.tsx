@@ -8,11 +8,15 @@ import { useParcelDetail } from "@/hooks/gov/useParcels";
 import { useAuth } from "@/contexts/AuthContext";
 import ParcelMap from "@/components/map/ParcelMap";
 import MapLegend from "@/components/map/MapLegend";
-import { createPurchaseTransaction } from "@/client-action/transaction";
 import type { ParcelFC, ParcelGeometry } from "@/lib/types/parcel";
+import { createPurchaseTransaction } from "@/client-action/transaction";
+import { TransferToken } from "@/lib/hedera/h";
+import { getHederaClient } from "@/lib/hedera/client";
+import { AccountId } from "@hashgraph/sdk";
+
 
 const { Title, Text, Paragraph } = Typography;
-
+const { nftTokenId } = getHederaClient();
 export default function ParcelDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -74,19 +78,20 @@ export default function ParcelDetailPage() {
 
     setIsProcessing(true);
     try {
-      // Web2 transaction creation
+      
       const response = await createPurchaseTransaction({
         listing_id: parcel.listing.id,
       });
-
       if (response.success && response.data) {
         message.success("Purchase completed successfully!");
         setShowPurchaseModal(false);
+        await TransferToken(
+          nftTokenId!,
+          parcel.parcel_id.split('-').pop()!,
+          AccountId.fromString(response.data.listing.seller_wallet),
+          AccountId.fromString(user.wallet_address)
+        );
 
-        // TODO: For web3 engineer - This is where you would:
-        // 1. Connect to user's wallet
-        // 2. Execute smart contract transaction
-        // 3. Update transaction with blockchain hash
         console.log("🔗 [WEB3 TODO] Execute blockchain transaction for:", {
           transactionId: response.data.transaction.id,
           listingId: parcel.listing.id,
@@ -94,7 +99,6 @@ export default function ParcelDetailPage() {
           buyer: user.wallet_address,
           seller: response.data.listing.seller_wallet
         });
-
         // Redirect to transaction history
         router.push("/user/my-transactions");
       } else {

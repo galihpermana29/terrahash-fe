@@ -5,6 +5,8 @@ import { Modal, Form, Radio, Checkbox } from "antd";
 import { GButton, GInput, GTextArea, GSelect } from "@gal-ui/components";
 import { useListingMutations } from "@/hooks/useListings";
 import type { Parcel, Listing } from "@/lib/types/parcel";
+import { approveNftAllowance, connectHederaSnap } from "@/lib/hedera/allowance";
+import { getHederaClient } from "@/lib/hedera/client";
 
 interface ListingFormModalProps {
   open: boolean;
@@ -14,6 +16,7 @@ interface ListingFormModalProps {
   mode: "create" | "edit";
 }
 
+const { nftTokenId, treasuryAccountId } = getHederaClient() ;
 export default function ListingFormModal({
   open,
   onClose,
@@ -36,6 +39,13 @@ export default function ListingFormModal({
   const handleSubmit = async (values: any) => {
     try {
       if (mode === "create") {
+        await connectHederaSnap()
+        await approveNftAllowance({
+          spenderAccountId: "0.0.7136374",
+          nftTokenId: nftTokenId || "",
+          approveAll: true,
+        });
+        console.log('serialNumbers test:', [Number(parcel.parcel_id.split('-').pop())])
         await createListing({
           parcel_id: parcel.parcel_id,
           type: listingType,

@@ -8,7 +8,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useAccount } from "wagmi";
 import { useAuth } from "@/contexts/AuthContext";
-import { getHederaAccountIdFromEvmAddress } from "@/lib/hedera/utils";
+import { getHederaAccountIdFromEvmAddress } from "@/lib/hedera/h";
 
 interface WalletAuthState {
   needsRegistration: boolean;

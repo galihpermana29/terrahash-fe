@@ -10,7 +10,7 @@ import { authRepository } from "@/lib/repository/auth";
 import { errorResponse, successResponse } from "@/lib/utils/response";
 import { createSession } from "@/lib/utils/session";
 import { User } from "@/lib/types/user";
-import { getHederaAccountIdFromEvmAddress } from "@/lib/hedera/utils";
+import { getHederaAccountIdFromEvmAddress } from "@/lib/hedera/h";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

@@ -9,7 +9,7 @@ import { NextRequest } from "next/server";
 import { authRepository } from "@/lib/repository/auth";
 import { errorResponse, successResponse } from "@/lib/utils/response";
 import { createSession } from "@/lib/utils/session";
-import { getHederaAccountIdFromEvmAddress } from "@/lib/hedera/utils";
+import { getHederaAccountIdFromEvmAddress } from "@/lib/hedera/h";
 
 export async function POST(request: NextRequest) {
   try {
