@@ -4,6 +4,7 @@ export interface Objection {
   user_id: string;
   message: string;
   status: 'PENDING' | 'REVIEWED' | 'RESOLVED';
+  ob_topic_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -11,6 +12,7 @@ export interface Objection {
 export interface ObjectionWithDetails extends Objection {
   parcel: {
     parcel_id: string;
+    ob_topic_id: string;
     area_m2: number;
     admin_region: {
       country: string;
@@ -31,6 +33,7 @@ export interface ObjectionWithDetails extends Objection {
 export interface CreateObjectionPayload {
   parcel_id: string;
   message: string;
+  hash_topic?: boolean;
 }
 
 export interface UpdateObjectionStatusPayload {

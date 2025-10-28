@@ -105,6 +105,8 @@ export function useParcelForm() {
       status: values.status,
       notes: values.notes,
       asset_url: values.asset_url || [],
+      certif_url: values.certif_url || "",
+      ob_topic_id: values.ob_topic_id || null,
     };
 
     // Add owner_id only if status is OWNED and ownerId is valid

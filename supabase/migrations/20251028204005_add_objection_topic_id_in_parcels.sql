@@ -1,0 +1,1 @@
+ALTER TABLE objections ADD COLUMN ob_topic_id TEXT;

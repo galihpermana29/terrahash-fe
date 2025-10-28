@@ -10,7 +10,7 @@ import ParcelMap from "@/components/map/ParcelMap";
 import MapLegend from "@/components/map/MapLegend";
 import type { ParcelFC, ParcelGeometry } from "@/lib/types/parcel";
 import { createPurchaseTransaction } from "@/client-action/transaction";
-import { getEvmAddressFromHederaAccountId, TransferToken, TransferTokentoBuyer } from "@/lib/hedera/h";
+import { getEvmAddressFromHederaAccountId, submitMessageToTopic, TransferToken, TransferTokentoBuyer } from "@/lib/hedera/h";
 import { getHederaClient } from "@/lib/hedera/client";
 import { createObjection } from "@/client-action/objection";
 import { parseEther } from "viem";
@@ -116,12 +116,19 @@ export default function ParcelDetailPage() {
 
   const handleObjectionSubmit = async (values: { objection: string }) => {
     if (!parcel || !user) return;
-
     setIsSubmittingObjection(true);
     try {
+      const { status } = await submitMessageToTopic(
+        parcel.ob_topic_id || "",
+        `Objection from ${user.full_name}: ${values.objection}`,
+        parcel.parcel_id
+      );
+      console.log("Submitted objection message to topic with status:", status);
       const response = await createObjection({
         parcel_id: parcel.parcel_id,
         message: values.objection,
+        ob_topic_id: parcel.ob_topic_id,
+        hash_topic: status === "SUCCESS" ? true : false,
       });
 
       if (response.success) {

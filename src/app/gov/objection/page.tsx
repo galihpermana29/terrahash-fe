@@ -8,6 +8,7 @@ import { updateObjectionStatus } from "@/client-action/objection";
 import type { ObjectionWithDetails } from "@/lib/types/objection";
 import AuthGuard from "@/components/auth/AuthGuard";
 import { GTable } from "@gal-ui/components";
+import { submitMessageToTopic } from "@/lib/hedera/h";
 
 const { Title, Text, Paragraph } = Typography;
 const { Search } = Input;
@@ -15,6 +16,7 @@ const { Search } = Input;
 const GovernmentObjectionPage = () => {
   const { objections, isLoading, error, refetch } = useGovernmentObjections();
   const [selectedObjection, setSelectedObjection] = useState<ObjectionWithDetails | null>(null);
+  
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -25,15 +27,27 @@ const GovernmentObjectionPage = () => {
     setDetailModalOpen(true);
   };
 
+
   const handleStatusUpdate = async (objectionId: string, newStatus: 'PENDING' | 'REVIEWED' | 'RESOLVED') => {
     setUpdatingStatus(objectionId);
     try {
-      const response = await updateObjectionStatus(objectionId, { status: newStatus });
+      console.log("Updating status for objection:", selectedObjection);
+      const submitResult = await submitMessageToTopic(
+        selectedObjection?.ob_topic_id || "",
+        `Status Update for Objection ${objectionId}: ${newStatus}`,
+        selectedObjection?.parcel.parcel_id || ""
+      );
 
-      if (response.success) {
-        await refetch(); // Refresh the data
-        if (selectedObjection?.id === objectionId) {
-          setSelectedObjection({ ...selectedObjection, status: newStatus });
+      console.log("Submitted status update to topic with result:", submitResult);
+
+      if (submitResult) {
+        const response = await updateObjectionStatus(objectionId, { status: newStatus });
+
+        if (response.success) {
+          await refetch(); // Refresh the data
+          if (selectedObjection?.id === objectionId) {
+            setSelectedObjection({ ...selectedObjection, status: newStatus });
+          }
         }
       }
     } catch (error) {
@@ -55,6 +69,7 @@ const GovernmentObjectionPage = () => {
     return matchesSearch && matchesStatus;
   });
 
+  
   const columns = [
     {
       title: "Parcel ID",
@@ -251,6 +266,7 @@ const GovernmentObjectionPage = () => {
               pagination={{
                 pageSize: 10,
                 showSizeChanger: true,
+
                 showTotal: (total, range) =>
                   `${range[0]}-${range[1]} of ${total} objections`,
               }}
@@ -273,9 +289,44 @@ const GovernmentObjectionPage = () => {
                 {/* Status and Basic Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Text type="secondary">Objection ID</Text>
-                    <div className="font-mono text-sm bg-gray-100 p-2 rounded">
-                      {selectedObjection.id}
+                    <Text type="secondary">Objection id</Text>
+                    <div className="flex items-center gap-2">
+                      <div className="font-mono text-sm bg-gray-100 p-2 rounded">
+                        {selectedObjection.parcel.ob_topic_id ? selectedObjection.parcel.ob_topic_id : "N/A"}
+                      </div>
+                      {selectedObjection.parcel.ob_topic_id && (
+                        <a
+                          href={`https://hashscan.io/testnet/topic/${selectedObjection.parcel.ob_topic_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-blue-600 hover:underline"
+                          title="View on HashScan"
+                        >
+                          <svg
+                            width="1em"
+                            height="1em"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            className="ml-1"
+                            xmlns="http://www.w3.org/2000/svg"
+                            style={{ display: 'inline' }}
+                          >
+                            <path
+                              d="M14 3h7v7m0-7L10 14"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            <path
+                              d="M5 12v7a2 2 0 0 0 2 2h7"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                        </a>
+                      )}
                     </div>
                   </div>
                   <div>

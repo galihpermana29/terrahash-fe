@@ -104,7 +104,7 @@ export async function PATCH(
 
     const { parcel_id } = await params;
     const body = await request.json();
-    const { geometry_geojson, area_m2, admin_region, status, owner_id, notes, asset_url, certif_url } = body;
+    const { geometry_geojson, area_m2, admin_region, status, owner_id, notes, asset_url, certif_url, ob_topic_id } = body;
 
     // Build update object (only include provided fields)
     const updateData: any = {};
@@ -136,7 +136,7 @@ export async function PATCH(
       }
       
       // If changing to UNCLAIMED, clear owner_id
-      if (status === "UNCLAIMED") {
+    if (status === "UNCLAIMED") {
         updateData.owner_id = null;
       }
     }

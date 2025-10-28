@@ -102,6 +102,7 @@ function ManageParcelContent() {
         owner_wallet: existingParcel.owner?.wallet_address || "",
         asset_url: existingParcel.asset_url || [],
         certif_url: existingParcel.certif_url || "",
+        ob_topic_id: existingParcel.ob_topic_id || "",
       });
 
       // Set local state
@@ -208,7 +209,12 @@ function ManageParcelContent() {
         const cleanedTokenId = nftTokenId.toString().replace("0.0.", "");
         const parcelId = `PARCEL-${cleanedTokenId}-${serialNumber}`;
         payload.parcel_id = parcelId;
-
+        let obTopicId = "";
+        if (payload.status === "UNCLAIMED") {
+          obTopicId = await createTopicWithMemo(`Objection Management : ${parcelId}`);
+          payload.ob_topic_id = obTopicId;
+          console.log("Created objection topic with ID:", obTopicId);
+        }
         await createParcel(payload);
       } else {
         const existingSerial = values.parcel_id?.split("-")?.pop();
