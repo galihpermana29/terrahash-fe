@@ -67,14 +67,14 @@ function RootAdminContent() {
           rules={[
             { required: true, message: "Wallet Address is required" },
             {
-              pattern: /^0x[a-fA-F0-9]{40}$/,
+              pattern: /^\d+\.\d+\.\d+$/,
               message: "Invalid wallet address format",
             },
           ]}
           label="Wallet Address"
           name="wallet_address"
         >
-          <GInput placeholder="0x..." />
+          <GInput placeholder="0.0.123..." />
         </Form.Item>
         <Form.Item
           rules={[{ required: true, message: "Full Name is required" }]}
@@ -112,7 +112,7 @@ function RootAdminContent() {
       key: "wallet_address",
       render: (address: string) => (
         <span className="font-mono text-sm">
-          {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "-"}
+          {address}
         </span>
       ),
     },

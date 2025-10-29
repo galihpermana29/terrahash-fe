@@ -45,6 +45,8 @@ export interface Parcel {
   admin_region: AdminRegion;
   notes?: string;
   asset_url?: string[] | null; // Array of image URLs
+  certif_url: string;
+  ob_topic_id?: string | null;
   created_at?: string;
   updated_at?: string;
   owner?: {
@@ -65,6 +67,8 @@ export interface ParcelFormPayload {
   owner_id?: string;
   notes?: string;
   asset_url?: string[];
+  certif_url?: string;
+  ob_topic_id?: string;
 }
 
 // Owner validation response

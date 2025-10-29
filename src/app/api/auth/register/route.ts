@@ -9,6 +9,7 @@ import { NextRequest } from "next/server";
 import { authRepository } from "@/lib/repository/auth";
 import { errorResponse, successResponse } from "@/lib/utils/response";
 import { createSession } from "@/lib/utils/session";
+import { getHederaAccountIdFromEvmAddress } from "@/lib/hedera/h";
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,21 +26,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate Ethereum address format (0x + 40 hex chars)
-    if (!/^0x[a-fA-F0-9]{40}$/.test(wallet_address)) {
+    // Normalize wallet address (lowercase)
+    const normalizedWallet = wallet_address.toLowerCase();
+
+    // Convert EVM → HEDERA ID
+    const hederaAccountId = await getHederaAccountIdFromEvmAddress(normalizedWallet);
+    
+    // Validate HEDERA account ID
+    if (!hederaAccountId) {
       return errorResponse(
-        "INVALID_WALLET_ADDRESS",
-        "Invalid wallet address format",
+        "FAUCET_REQUIRED",
+        "Hedera account not found. Please register/faucet HBAR from your wallet first.",
         null,
         400
       );
     }
 
-    // Normalize wallet address (lowercase)
-    const normalizedWallet = wallet_address.toLowerCase();
 
     // Check if wallet already exists
-    const existingUser = await authRepository.findByWallet(normalizedWallet);
+    const existingUser = await authRepository.findByWallet(hederaAccountId || normalizedWallet);
     if (existingUser) {
       return errorResponse(
         "WALLET_ALREADY_REGISTERED",
@@ -80,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     // Create new PUBLIC user
     const newUser = await authRepository.register({
-      wallet_address: normalizedWallet,
+      wallet_address: hederaAccountId,
       type: "PUBLIC",
       full_name: full_name || null,
     });

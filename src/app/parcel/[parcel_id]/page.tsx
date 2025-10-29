@@ -8,17 +8,24 @@ import { useParcelDetail } from "@/hooks/gov/useParcels";
 import { useAuth } from "@/contexts/AuthContext";
 import ParcelMap from "@/components/map/ParcelMap";
 import MapLegend from "@/components/map/MapLegend";
-import { createPurchaseTransaction } from "@/client-action/transaction";
-import { createObjection } from "@/client-action/objection";
 import type { ParcelFC, ParcelGeometry } from "@/lib/types/parcel";
+import { createPurchaseTransaction } from "@/client-action/transaction";
+import { getEvmAddressFromHederaAccountId, submitMessageToTopic, TransferToken, TransferTokentoBuyer } from "@/lib/hedera/h";
+import { getHederaClient } from "@/lib/hedera/client";
+import { createObjection } from "@/client-action/objection";
+import { parseEther } from "viem";
+import { useAccount, useSendTransaction } from "wagmi";
+
 
 const { Title, Text, Paragraph } = Typography;
-
+const { nftTokenId } = getHederaClient();
 export default function ParcelDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
   const parcelId = params.parcel_id as string;
+  const { sendTransactionAsync } = useSendTransaction();
+  const { address: userAddress } = useAccount();
 
   const { parcel, isLoading } = useParcelDetail(parcelId);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -59,17 +66,8 @@ export default function ParcelDetailPage() {
       message.error("No listing found for this parcel");
       return;
     }
+    setShowPurchaseModal(true);
 
-    // Disable lease functionality temporarily
-    if (parcel.listing.type === "LEASE") {
-      message.info("Lease functionality is coming soon!");
-      return;
-    }
-
-    // Only handle SALE for now
-    if (parcel.listing.type === "SALE") {
-      setShowPurchaseModal(true);
-    }
   };
 
   const handlePurchaseConfirm = async () => {
@@ -77,28 +75,33 @@ export default function ParcelDetailPage() {
 
     setIsProcessing(true);
     try {
-      // Web2 transaction creation
+
+      const sellerWallet = getEvmAddressFromHederaAccountId(parcel.owner?.wallet_address || "");
+      console.log("Seller Wallet:", parcel.owner?.wallet_address, "=> EVM Address:", sellerWallet);
+      const amountInNative = parseEther(
+        (parcel.listing.price_kes).toString()
+      );
+
+      const txHash = await sendTransactionAsync({
+          from: userAddress,
+          to: sellerWallet,
+          value: amountInNative,
+          gasLimit: 210000,
+      });
+
+      console.log("Transaction Hash:", txHash);
+
       const response = await createPurchaseTransaction({
         listing_id: parcel.listing.id,
+        payment_hash: txHash,
       });
+
+      console.log("Purchase Response:", response);
 
       if (response.success && response.data) {
         message.success("Purchase completed successfully!");
         setShowPurchaseModal(false);
 
-        // TODO: For web3 engineer - This is where you would:
-        // 1. Connect to user's wallet
-        // 2. Execute smart contract transaction
-        // 3. Update transaction with blockchain hash
-        console.log("🔗 [WEB3 TODO] Execute blockchain transaction for:", {
-          transactionId: response.data.transaction.id,
-          listingId: parcel.listing.id,
-          amount: parcel.listing.price_kes,
-          buyer: user.wallet_address,
-          seller: response.data.listing.seller_wallet
-        });
-
-        // Redirect to transaction history
         router.push("/user/my-transactions");
       } else {
         message.error(response.error?.message || "Purchase failed");
@@ -113,12 +116,18 @@ export default function ParcelDetailPage() {
 
   const handleObjectionSubmit = async (values: { objection: string }) => {
     if (!parcel || !user) return;
-
     setIsSubmittingObjection(true);
     try {
+      const { status } = await submitMessageToTopic(
+        parcel.ob_topic_id || "",
+        `Objection from ${user.full_name}: ${values.objection}`,
+        parcel.parcel_id
+      );
+      console.log("Submitted objection message to topic with status:", status);
       const response = await createObjection({
         parcel_id: parcel.parcel_id,
         message: values.objection,
+        hash_topic: status === "SUCCESS" ? true : false,
       });
 
       if (response.success) {
@@ -197,23 +206,23 @@ export default function ParcelDetailPage() {
               {hasListing && isPublicUser && !isOwner && (
                 <button
                   onClick={handleBuyOrLease}
-                  disabled={isProcessing || parcel.listing?.type === "LEASE"}
-                  className={`h-10 px-6 rounded-full font-medium transition-colors ${parcel.listing?.type === "LEASE"
-                    ? "bg-gray-400 text-white cursor-not-allowed"
-                    : isProcessing
+                  disabled={isProcessing} // only disable if processing
+                  className={`h-10 px-6 rounded-full font-medium transition-colors ${
+                    isProcessing
                       ? "bg-gray-400 text-white cursor-not-allowed"
                       : "bg-brand-primary text-white hover:bg-brand-primary-dark"
-                    }`}
+                  }`}
                 >
                   {isProcessing
                     ? "Processing..."
                     : parcel.listing?.type === "SALE"
-                      ? "Buy Now"
-                      : "Lease Soon"}
+                    ? "Buy Now"
+                    : "Lease Soon"}
                 </button>
               )}
             </div>
           )}
+
         </div>
       </div>
 
@@ -276,7 +285,7 @@ export default function ParcelDetailPage() {
                 <div className="mb-6">
                   <div className="flex items-baseline gap-3">
                     <Title level={3}>
-                      KES {parcel.listing?.price_kes.toLocaleString()}
+                      HBAR {parcel.listing?.price_kes.toLocaleString()}
                     </Title>
                     {parcel.listing?.type === "LEASE" && (
                       <Text type="secondary" className="text-lg">/month</Text>
@@ -393,7 +402,7 @@ export default function ParcelDetailPage() {
         </div>
       </div>
       {/* Objection Form */}
-      {isPublicUser && !isOwner && (
+      {isPublicUser && !isOwner && parcel.status === "UNCLAIMED" && (
         <div className="">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <Title level={3} className="mb-4">
@@ -504,7 +513,7 @@ export default function ParcelDetailPage() {
                 <div className="flex justify-between text-lg font-semibold border-t pt-2">
                   <span>Total Price:</span>
                   <span className="text-brand-primary">
-                    KES {parcel.listing.price_kes.toLocaleString()}
+                    HBAR {parcel.listing.price_kes.toLocaleString()}
                   </span>
                 </div>
               </div>

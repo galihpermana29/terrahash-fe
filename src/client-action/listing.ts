@@ -53,6 +53,7 @@ export interface CreateListingPayload {
   description?: string;
   terms?: string;
   contact_phone?: string;
+  topic_id?: string;
 }
 
 export interface UpdateListingPayload {

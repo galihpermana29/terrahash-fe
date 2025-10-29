@@ -18,6 +18,9 @@ import { useParcelForm } from "@/hooks/gov/useParcelForm";
 import { useParcels, useParcelDetail } from "@/hooks/gov/useParcels";
 import AuthGuard from "@/components/auth/AuthGuard";
 import { useWatch } from "antd/es/form/Form";
+import { uploadMemoDataToIPFS } from "@/lib/utils/ipfs";
+import { getHederaClient } from "@/lib/hedera/client";
+import { createTopicWithMemo, mintNFT, updateNFTMetadata } from "@/lib/hedera/h";
 
 // Countries in Africa (sample list)
 const AFRICAN_COUNTRIES = [
@@ -67,19 +70,21 @@ function ManageParcelContent() {
     buildFormPayload,
   } = useParcelForm();
 
-  const { createParcel, updateParcel, isCreating, isUpdating } = useParcels();
+  const { createParcel, updateParcel } = useParcels();
   const { parcel: existingParcel, isLoading: isLoadingParcel } = useParcelDetail(
     isEditMode ? parcelId : null
   );
-
+  const { nftTokenId, treasuryAccountId } = getHederaClient();
   const asset_url = useWatch('asset_url', form);
+  const certif_url = useWatch('certif_url', form);
 
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [selectedState, setSelectedState] = useState<string>("");
   const [status, setStatus] = useState<"UNCLAIMED" | "OWNED">("UNCLAIMED");
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [loadedGeometry, setLoadedGeometry] = useState<GeoJSON.Feature<GeoJSON.Polygon> | null>(null);
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   // Load existing parcel data in edit mode
   useEffect(() => {
     if (isEditMode && existingParcel && !isDataLoaded) {
@@ -96,6 +101,8 @@ function ManageParcelContent() {
         notes: existingParcel.notes || "",
         owner_wallet: existingParcel.owner?.wallet_address || "",
         asset_url: existingParcel.asset_url || [],
+        certif_url: existingParcel.certif_url || "",
+        ob_topic_id: existingParcel.ob_topic_id || "",
       });
 
       // Set local state
@@ -121,7 +128,7 @@ function ManageParcelContent() {
     } else if (!isEditMode && !isDataLoaded) {
       // Create mode: auto-generate parcel ID
       form.setFieldsValue({
-        parcel_id: `PARCEL-${Date.now()}`,
+        // parcel_id: `PARCEL-${Date.now()}`,
         status: "UNCLAIMED",
       });
       setIsDataLoaded(true);
@@ -161,26 +168,69 @@ function ManageParcelContent() {
   };
 
   const handleSubmit = async (values: any) => {
-    const payload = buildFormPayload(values);
-
-    if (!payload) {
-      return;
-    }
-
+    setIsSubmitting(true);
     try {
-      if (isEditMode && parcelId) {
-        // Update existing parcel
-        await updateParcel({ parcelId, data: payload });
-        router.push("/gov/parcel-management");
-      } else {
-        // Create new parcel
-        await createParcel(payload);
-        router.push("/gov/parcel-management");
+      const payload = buildFormPayload(values);
+      if (!payload) {
+        return;
       }
-    } catch (error) {
-      console.error("Error submitting parcel:", error);
+      // Build HIP-412 Metadata
+      const memoData = {
+        format: "HIP412@2.0.0",
+        name: values.parcel_id,
+        creator: "Gov.terrahash",
+        description: values.notes || "No description provided",
+        image: values.certif_url,
+        type: values.certif_url?.endsWith(".png") ? "image/png" : "image/jpeg",
+        files: (asset_url ?? []).map((url: string, i: number) => ({
+          uri: url,
+          type: url.endsWith(".png") ? "image/png" : "image/jpeg",
+          is_default_file: i === 0 // file pertama dianggap utama
+        })),
+        attributes: [
+          { trait_type: "Country", value: values.country },
+          { trait_type: "State", value: values.state },
+          { trait_type: "City", value: values.city },
+          { trait_type: "Area (m²)", value: area },
+          { trait_type: "GeoPoint Type", value: geometry.type },
+          { trait_type: "GeoPoint Coordinates", value: geometry.geometry.coordinates[0] }
+        ]
+      } as const;
+      
+      const { metadataIpfsUri } = await uploadMemoDataToIPFS(memoData);
+      let serialNumber: string | null = null;
+
+      if (!isEditMode) {
+        serialNumber = await mintNFT(
+          metadataIpfsUri,
+          values.owner_wallet || treasuryAccountId
+        );
+
+        const cleanedTokenId = nftTokenId.toString().replace("0.0.", "");
+        const parcelId = `PARCEL-${cleanedTokenId}-${serialNumber}`;
+        payload.parcel_id = parcelId;
+        let obTopicId = "";
+        if (payload.status === "UNCLAIMED") {
+          obTopicId = await createTopicWithMemo(`Objection Management : ${parcelId}`);
+          payload.ob_topic_id = obTopicId;
+          console.log("Created objection topic with ID:", obTopicId);
+        }
+        await createParcel(payload);
+      } else {
+        const existingSerial = values.parcel_id?.split("-")?.pop();
+        if (!existingSerial) throw new Error("Invalid parcel_id format");
+
+        await updateNFTMetadata(existingSerial, metadataIpfsUri, values.owner_wallet, values.status);
+        await updateParcel({ parcelId: values.parcel_id, data: payload });
+      }
+      router.push("/gov/parcel-management");
+    } catch (err) {
+      console.error("[Submit] Error submitting parcel:", err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
 
   // Show loading state while fetching parcel data in edit mode
   if (isEditMode && isLoadingParcel) {
@@ -256,7 +306,6 @@ function ManageParcelContent() {
             <Form.Item
               label="Parcel ID"
               name="parcel_id"
-              rules={[{ required: true, message: "Parcel ID is required" }]}
             >
               <GInput disabled placeholder="Auto-generated" />
             </Form.Item>
@@ -341,6 +390,7 @@ function ManageParcelContent() {
                 <OwnerValidator
                   value={ownerWallet}
                   onChange={handleOwnerChange}
+                  placeholder="0.0.12345..."
                 />
               </Form.Item>
             )}
@@ -351,6 +401,22 @@ function ManageParcelContent() {
                 customSize="xl"
                 placeholder="Additional information, paperwork reference, etc."
                 rows={4}
+              />
+            </Form.Item>
+            
+            {/* Certificate Upload */}
+            <Form.Item
+              label="NFT Certificate"
+              name="certif_url"
+              tooltip="Upload images of the NFT certificate"
+              // rules={[{ required: true }]}
+            >
+              <DraggerUpload
+                profileImageURL={certif_url}
+                formItemName="certif_url"
+                form={form}
+                limit={1}
+                multiple={false}
               />
             </Form.Item>
 
@@ -371,17 +437,34 @@ function ManageParcelContent() {
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-4">
-            <GButton
-              btn_type="secondary-gray"
-              onClick={() => router.push("/gov/parcel-management")}
-            >
-              Cancel
-            </GButton>
-            <GButton btn_type="primary" htmlType="submit">
-              {isEditMode ? "Update Parcel" : "Create Parcel"}
-            </GButton>
-          </div>
+            {isSubmitting ? (
+              <div className="flex justify-end w-full">
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
+                  <span className="text-blue-700 font-medium">
+                    {isEditMode ? "Updating Parcel..." : "Creating Parcel..."}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-end gap-4">
+                <GButton
+                  btn_type="secondary-gray"
+                  onClick={() => router.push("/gov/parcel-management")}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </GButton>
+                <GButton
+                  btn_type="primary"
+                  htmlType="submit"
+                  loading={isSubmitting}
+                  disabled={isSubmitting}
+                >
+                  {isEditMode ? "Update Parcel" : "Create Parcel"}
+                </GButton>
+              </div>
+            )}
         </Form>
       </div>
     </AuthGuard>

@@ -47,6 +47,7 @@ export interface TransactionWithDetails extends Transaction {
 
 export interface CreateTransactionPayload {
   listing_id: string;
+  payment_hash: string;
 }
 
 export interface CompleteTransactionPayload {

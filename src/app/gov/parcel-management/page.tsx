@@ -98,8 +98,7 @@ const ParcelManagementPage = () => {
           <div>
             <div className="font-medium">{record.owner.full_name}</div>
             <div className="text-xs text-gray-500">
-              {record.owner.wallet_address.slice(0, 6)}...
-              {record.owner.wallet_address.slice(-4)}
+              {record.owner.wallet_address}
             </div>
           </div>
         );
@@ -142,6 +141,21 @@ const ParcelManagementPage = () => {
       }
     },
   ];
+
+  columns[0].render = (parcel_id: string) => {
+    const parts = parcel_id.split("-");
+    const formattedId = `0.0.${parts[1]}/${parts[2]}`;
+    return (
+      <a
+        href={`https://hashscan.io/testnet/token/${formattedId}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-500 hover:underline"
+      >
+        {parcel_id}
+      </a>
+    );
+  };
 
   return (
     <AuthGuard requiredUserType="GOV" redirectTo="/">

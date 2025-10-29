@@ -98,13 +98,15 @@ export function useParcelForm() {
     };
 
     const payload: ParcelFormPayload = {
-      parcel_id: values.parcel_id || `PARCEL-${Date.now()}`, // Auto-generate if not provided
+      parcel_id: values.parcel_id , // Auto-generate if not provided
       geometry_geojson: geometry!,
       area_m2: area,
       admin_region: adminRegion,
       status: values.status,
       notes: values.notes,
       asset_url: values.asset_url || [],
+      certif_url: values.certif_url || "",
+      ob_topic_id: values.ob_topic_id || null,
     };
 
     // Add owner_id only if status is OWNED and ownerId is valid

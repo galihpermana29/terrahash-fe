@@ -3,7 +3,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/utils/session";
 import type { ApiResponse } from "@/lib/types/response";
 import type { TransactionResponse } from "@/lib/types/transaction";
-
+import {  submitMessageToTopic, TransferTokentoBuyer } from "@/lib/hedera/h";
 /**
  * Create a new purchase transaction
  * This endpoint handles the complete purchase flow for web2
@@ -79,17 +79,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }, { status: 404 });
     }
 
-    // Validate listing type (only SALE for now)
-    if (listing.type !== "SALE") {
-      return NextResponse.json({
-        success: false,
-        error: {
-          code: "INVALID_LISTING_TYPE",
-          message: "Only SALE listings are supported currently"
-        }
-      }, { status: 400 });
-    }
-
     // Check if user is not the owner
     if (listing.parcel.owner_id === user.id) {
       return NextResponse.json({
@@ -118,8 +107,98 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }, { status: 404 });
     }
 
-    // Create transaction with COMPLETED status (web2 only for now)
-    // TODO: Web3 engineer should modify this to handle blockchain transaction
+    let txStatus = "SKIPPED";
+    let status_hash: string | null = null;
+    let transactionType = "PURCHASE"; // default for SALE
+
+    if (listing.type === "SALE") {
+      const result = await TransferTokentoBuyer(
+        listing.parcel.parcel_id.split('-').pop()!,
+        listing.parcel.owner.wallet_address,
+        user.wallet_address
+      );
+
+      status_hash = result.status_hash;
+      txStatus = result.status === "SUCCESS" ? "COMPLETED" : "FAILED";
+      transactionType = "PURCHASE";
+    }
+    if (listing.type === "LEASE") {
+      const leasePeriod = listing.lease_period;
+      const startDate = new Date();
+
+      // Defensive check for leasePeriod 
+      let monthsToAdd = 0;
+      switch (leasePeriod) {
+      case "1_MONTH":
+        monthsToAdd = 1;
+        break;
+      case "6_MONTHS":
+        monthsToAdd = 6;
+        break;
+      case "12_MONTHS":
+        monthsToAdd = 12;
+        break;
+      default:
+        return NextResponse.json({
+        success: false,
+        error: {
+          code: "INVALID_LEASE_PERIOD",
+          message: `Unknown lease period: ${leasePeriod}`
+        }
+        }, { status: 400 });
+      }
+
+      // Calculate end date safely
+      const endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + monthsToAdd);
+
+      // Defensive: listing.topic_id and listing.parcel.parcel_id existence
+      if (!listing.parcel?.parcel_id) {
+        return NextResponse.json({
+          success: false,
+          error: {
+          code: "MISSING_PARCEL",
+          message: "Lease topic or parcel id missing"
+          }
+        }, { status: 400 });
+      }
+
+      if (!listing.topic_id ) {
+      return NextResponse.json({
+        success: false,
+        error: {
+        code: "MISSING_TOPIC",
+        message: "Lease topic or parcel id missing"
+        }
+      }, { status: 400 });
+    }
+      // For hedera submit
+      const message = `Lease started by buyer ${buyer.wallet_address} from ${startDate.toISOString().replace('T', ' ').replace('Z', '').split('.')[0]} until ${endDate.toISOString().replace('T', ' ').replace('Z', '').split('.')[0]}`;
+
+      let result;
+      try {
+      result = await submitMessageToTopic(
+        listing.topic_id,
+        message,
+        listing.parcel.parcel_id
+      );
+      } catch (e) {
+      console.error("submitMessageToTopic error:", e);
+      return NextResponse.json({
+        success: false,
+        error: {
+        code: "HEDERA_SUBMIT_FAILED",
+        message: "Failed to submit lease message to Hedera"
+        }
+      }, { status: 500 });
+      }
+
+      status_hash = result?.transactionId || null;
+      txStatus = result?.status === "SUCCESS" ? "COMPLETED" : "FAILED";
+      transactionType = "LEASE";
+    }
+
+    // Save transaction in Supabase
     const { data: transaction, error: transactionError } = await supabase
       .from("transactions")
       .insert({
@@ -127,13 +206,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
         buyer_id: buyer.id,
         seller_id: listing.parcel.owner_id,
         parcel_id: listing.parcel.parcel_id,
-        type: "PURCHASE",
-        status: "COMPLETED", // For web2 flow - web3 engineer should change this logic
+        type: transactionType,
+        status: txStatus,
         amount_kes: listing.price_kes,
-        // transaction_hash will be added by web3 integration
+        transaction_hash: status_hash
       })
       .select()
       .single();
+
+    if (transactionError) {
+      console.error("Supabase insert error:", transactionError);
+      throw new Error("Transaction recording failed");
+    }
+
 
     if (transactionError) {
       console.error("Transaction creation error:", transactionError);
@@ -146,33 +231,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }, { status: 500 });
     }
 
-    // TODO: Web3 integration point
-    // The web3 engineer should:
-    // 1. Create transaction with "PENDING" status initially
-    // 2. Execute smart contract transaction on Hedera
-    // 3. Update transaction with blockchain hash and final status
-    console.log("🔗 [WEB3 TODO] Execute blockchain transaction:", {
-      transactionId: transaction.id,
-      buyerWallet: buyer.wallet_address,
-      sellerWallet: listing.parcel.owner.wallet_address,
-      amount: listing.price_kes,
-      parcelId: listing.parcel.parcel_id
-    });
+    if (txStatus === "COMPLETED" && listing.type === "SALE") {
+      const { error: parcelUpdateError } = await supabase
+        .from("parcels")
+        .update({ 
+          owner_id: buyer.id,
+          status: "OWNED",
+          updated_at: new Date().toISOString()
+        })
+        .eq("parcel_id", listing.parcel.parcel_id);
 
-    // Update parcel ownership (for web2 flow)
-    // TODO: Web3 engineer should move this to after blockchain confirmation
-    const { error: parcelUpdateError } = await supabase
-      .from("parcels")
-      .update({ 
-        owner_id: buyer.id,
-        status: "OWNED",
-        updated_at: new Date().toISOString()
-      })
-      .eq("parcel_id", listing.parcel.parcel_id);
-
-    if (parcelUpdateError) {
-      console.error("Parcel update error:", parcelUpdateError);
-      // Don't fail the transaction, but log the error
+      if (parcelUpdateError) {
+        console.error("Parcel update error:", parcelUpdateError);
+      }
     }
 
     // Deactivate the listing

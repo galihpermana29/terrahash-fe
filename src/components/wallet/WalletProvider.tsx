@@ -1,7 +1,7 @@
 "use client";
 
 import { WagmiProvider, http } from "wagmi";
-import { mainnet, sepolia } from "wagmi/chains";
+import { hedera, hederaTestnet } from "wagmi/chains";
 import { RainbowKitProvider, getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { ReactNode, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -13,10 +13,10 @@ const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "demo";
 const config = getDefaultConfig({
   appName: "TerraHash",
   projectId,
-  chains: [mainnet, sepolia],
+  chains: [hedera, hederaTestnet],
   transports: {
-    [mainnet.id]: http(),
-    [sepolia.id]: http(),
+    [hedera.id]: http(),
+    [hederaTestnet.id]: http(),
   },
   ssr: true, // Next.js App Router
 });

@@ -8,6 +8,7 @@ import { checkWallet } from "@/client-action/auth";
 interface OwnerValidatorProps {
   value?: string;
   onChange?: (walletAddress: string, userId?: string) => void;
+  placeholder?: string;
   disabled?: boolean;
 }
 
@@ -79,7 +80,7 @@ export default function OwnerValidator({
           <GInput
             value={value}
             onChange={handleInputChange}
-            placeholder="0x..."
+            placeholder="0.0.123..."
             disabled={disabled}
           />
         </div>

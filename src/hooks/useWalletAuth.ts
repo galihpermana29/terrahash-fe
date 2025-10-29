@@ -8,6 +8,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useAccount } from "wagmi";
 import { useAuth } from "@/contexts/AuthContext";
+import { getHederaAccountIdFromEvmAddress } from "@/lib/hedera/h";
 
 interface WalletAuthState {
   needsRegistration: boolean;
@@ -55,34 +56,33 @@ export function useWalletAuth() {
     }
   }, [isAuthenticated, isConnected, address]);
 
-  const handleWalletConnection = async (walletAddress: string) => {
-    try {
-      setWalletAuthState((prev) => ({ ...prev, isCheckingAuth: true }));
+const handleWalletConnection = async (walletAddress: string) => {
+  try {
+    setWalletAuthState((prev) => ({ ...prev, isCheckingAuth: true }));
 
-      const result = await checkWalletExists(walletAddress);
-      console.log(result, "result");
-      if (result.success && result.data.exists) {
-        const loginData = await login(walletAddress);
-        setWalletAuthState({
-          needsRegistration: false,
-          isCheckingAuth: false,
-        });
+    // Convert EVM → Hedera ID
+    const hederaAccountId = await getHederaAccountIdFromEvmAddress(walletAddress);
 
-        console.log(loginData, "result");
-      } else {
-        setWalletAuthState({
-          needsRegistration: true,
-          isCheckingAuth: false,
-        });
-      }
-    } catch (error) {
-      console.error("[useWalletAuth] Error during wallet auth:", error);
-      setWalletAuthState({
-        needsRegistration: false,
-        isCheckingAuth: false,
-      });
+    if (!hederaAccountId) {
+      // Hedera ID not found → needs registration/faucet
+      setWalletAuthState({ needsRegistration: true, isCheckingAuth: false });
+      return;
     }
-  };
+
+    // Check if Hedera account exists in DB
+    const result = await checkWalletExists(hederaAccountId);
+    if (result.success && result.data.exists) {
+      await login(hederaAccountId);
+      setWalletAuthState({ needsRegistration: false, isCheckingAuth: false });
+    } else {
+      setWalletAuthState({ needsRegistration: true, isCheckingAuth: false });
+    }
+  } catch (error) {
+    console.error("[useWalletAuth] Error during wallet auth:", error);
+    setWalletAuthState({ needsRegistration: false, isCheckingAuth: false });
+  }
+};
+
 
   const dismissRegistration = () => {
     setWalletAuthState((prev) => ({ ...prev, needsRegistration: false }));

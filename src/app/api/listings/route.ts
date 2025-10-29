@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
       description,
       terms,
       contact_phone,
+      topic_id,
     } = body;
 
     // Validate required fields
@@ -243,6 +244,7 @@ export async function POST(request: NextRequest) {
         terms: terms || null,
         contact_phone: contact_phone || null,
         active: true,
+        topic_id: topic_id || null,
       })
       .select()
       .single();

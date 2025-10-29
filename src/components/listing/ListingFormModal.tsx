@@ -5,6 +5,9 @@ import { Modal, Form, Radio, Checkbox } from "antd";
 import { GButton, GInput, GTextArea, GSelect } from "@gal-ui/components";
 import { useListingMutations } from "@/hooks/useListings";
 import type { Parcel, Listing } from "@/lib/types/parcel";
+import { approveNftAllowance, connectHederaSnap } from "@/lib/hedera/allowance";
+import { getHederaClient } from "@/lib/hedera/client";
+import { createTopicWithMemo } from "@/lib/hedera/h";
 
 interface ListingFormModalProps {
   open: boolean;
@@ -14,6 +17,7 @@ interface ListingFormModalProps {
   mode: "create" | "edit";
 }
 
+const { nftTokenId, treasuryAccountId } = getHederaClient() ;
 export default function ListingFormModal({
   open,
   onClose,
@@ -22,11 +26,11 @@ export default function ListingFormModal({
   mode,
 }: ListingFormModalProps) {
   const [form] = Form.useForm();
-  const { createListing, updateListing, isCreating, isUpdating } = useListingMutations();
+  const { createListing, updateListing } = useListingMutations();
   const [listingType, setListingType] = useState<"SALE" | "LEASE">(
     existingListing?.type || "SALE"
   );
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const leasePeriodOptions = [
     { value: "1_MONTH", label: "Monthly (Pay every month)" },
     { value: "6_MONTHS", label: "Every 6 Months" },
@@ -34,8 +38,20 @@ export default function ListingFormModal({
   ];
 
   const handleSubmit = async (values: any) => {
+    setIsSubmitting(true);
     try {
       if (mode === "create") {
+        await connectHederaSnap()
+        await approveNftAllowance({
+          spenderAccountId: treasuryAccountId,
+          nftTokenId: nftTokenId || "",
+          approveAll: true,
+        });
+        
+        const topicMemo = `Lease Record for : ${parcel.parcel_id}`;
+        const topicId = await createTopicWithMemo(topicMemo);
+
+        console.log(topicId);
         await createListing({
           parcel_id: parcel.parcel_id,
           type: listingType,
@@ -44,6 +60,7 @@ export default function ListingFormModal({
           description: values.description,
           terms: values.terms,
           contact_phone: values.contact_phone,
+          topic_id: topicId,
         });
       } else if (existingListing) {
         await updateListing(existingListing.id, {
@@ -58,6 +75,8 @@ export default function ListingFormModal({
       onClose();
     } catch (error) {
       console.error("Error submitting listing:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -144,8 +163,8 @@ export default function ListingFormModal({
         <Form.Item
           label={
             listingType === "LEASE"
-              ? "Price per Month (KES)"
-              : "Price (KES)"
+              ? "Price per Month (HBAR)"
+              : "Price (HBAR)"
           }
           name="price_kes"
           rules={[
@@ -162,7 +181,7 @@ export default function ListingFormModal({
         >
           <GInput
             type="number"
-            placeholder="Enter price in KES"
+            placeholder="Enter price in HBAR"
           />
         </Form.Item>
 
@@ -194,7 +213,7 @@ export default function ListingFormModal({
                     Total Payment per Period
                   </div>
                   <div className="text-blue-700">
-                    KES {calculateLeaseTotal()?.toLocaleString()}
+                    HBAR {calculateLeaseTotal()?.toLocaleString()}
                   </div>
                 </div>
               )}
@@ -268,7 +287,7 @@ export default function ListingFormModal({
           <GButton
             btn_type="primary"
             htmlType="submit"
-            loading={isCreating || isUpdating}
+            loading={isSubmitting}
           >
             {mode === "create" ? "Create Listing" : "Update Listing"}
           </GButton>

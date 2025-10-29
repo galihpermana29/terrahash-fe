@@ -59,7 +59,7 @@ const MarketplaceListingPage = () => {
             <div className="font-medium">{owner?.full_name || "Unknown"}</div>
             <div className="text-xs text-gray-500 truncate">
               {owner?.wallet_address ?
-                `${owner.wallet_address.slice(0, 8)}...${owner.wallet_address.slice(-6)}`
+                `${owner.wallet_address}`
                 : "-"
               }
             </div>
@@ -109,7 +109,7 @@ const MarketplaceListingPage = () => {
         return (
           <div>
             <div className="font-medium">
-              KES {record.price_kes?.toLocaleString() || "0"}
+              HBAR {record.price_kes?.toLocaleString() || "0"}
             </div>
             {record.type === "LEASE" && record.lease_period && (
               <div className="text-xs text-gray-500">
