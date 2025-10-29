@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Search, MapPin, Shield, FileCheck, ChevronRight, Sparkles, Eye, TrendingUp } from 'lucide-react';
 import { useLatestUnclaimedParcels } from '@/hooks/useLatestParcels';
+import ParcelCard from '@/components/parcel/ParcelCard';
+import Link from 'next/dist/client/link';
 
 export default function Home() {
   const [q, setQ] = useState('');
@@ -165,96 +167,37 @@ const { parcels: latestParcels, isLoading: parcelsLoading } = useLatestUnclaimed
         </div>
       </section>
 
-      {/* Latest Unclaimed Land */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          {/* Section Header */}
-          <div className="flex items-end justify-between mb-12">
-            <div>
-              <h2 className="text-[1rem] sm:text-[1.8rem] lg:text-[2.5rem] font-bold text-gray-900 mb-4">Latest Unclaimed Land</h2>
-            </div>
-            <button 
-              onClick={() => window.location.href = '/map'}
-              className="hidden lg:flex items-center gap-2 text-amber-600 hover:text-amber-700 font-medium group"
-            >
-              View all on map
-              <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-
-          {/* Parcel Cards */}
-          {latestParcels && latestParcels.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {latestParcels.map((parcel) => (
-                <div key={parcel.parcel_id} className="group bg-white rounded-3xl overflow-hidden border border-gray-100 hover:border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-300">
-                  {/* Image */}
-                  <div className="relative h-56 overflow-hidden">
-                    <img 
-                      src={parcel.asset_url[0] || 'https://res.cloudinary.com/dqipjpy1w/image/upload/v1760192851/murad-swaleh-7tDidSXbgD8-unsplash_hn17iq.jpg'} 
-                      alt={parcel.parcel_id}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                    
-                    {/* Status Badge */}
-                    <div className="absolute top-4 left-4">
-                      <span className="px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-sm text-emerald-700 text-xs font-semibold uppercase tracking-wide shadow-lg">
-                        {parcel.status}
-                      </span>
-                    </div>
-
-                    {/* Quick View Button */}
-                    <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/95 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:scale-110">
-                      <Eye className="w-5 h-5 text-gray-700" />
-                    </button>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-6">
-                    <div className="mb-4">
-                      <h3 className="font-bold text-xl text-gray-900 mb-1">{parcel.parcel_id}</h3>
-                      <div className="flex items-center gap-1.5 text-gray-500">
-                        <MapPin className="w-4 h-4" />
-                        <span className="text-sm">{parcel.admin_region.city}</span>
-                      </div>
-                    </div>
-
-                    {/* Stats */}
-                    <div className="flex items-center gap-6 pb-6 mb-6 border-b border-gray-100">
-                      <div>
-                        <div className="text-xs text-gray-500 mb-1">Area</div>
-                        <div className="font-semibold text-gray-900">{formatAcres(parcel.area_m2)} acres</div>
-                      </div>
-                      <div className="w-px h-10 bg-gray-200"></div>
-                      <div>
-                        <div className="text-xs text-gray-500 mb-1">Starting Point</div>
-                        <div className="font-semibold text-gray-900">{JSON.parse(parcel.geometry_geojson).geometry.coordinates[0][0].join(', ')}</div>
-                      </div>
-                    </div>
-
-                    {/* CTA */}
-                    <button 
-                      onClick={() => window.location.href = `/map?q=${parcel.parcel_id}`}
-                      className="w-full h-12 rounded-xl bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 group"
-                    >
-                      View on Map
-                      <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </button>
-                  </div>
+          {/* 3) Latest Unclaimed Land */}
+          <section className="py-16 bg-white">
+            <div className="max-w-7xl mx-auto px-6">
+              <div className="flex items-end justify-between mb-8">
+                <div>
+                  <h2 className="text-[1rem] sm:text-[1.8rem] lg:text-[2.5rem] font-bold text-gray-900 mb-4">Latest Unclaimed Land</h2>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl border border-gray-200">
-              <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-4">
-                <MapPin className="w-8 h-8 text-gray-400" />
+                <Link href="/map" className="text-brand-gold hover:opacity-80">View all on map →</Link>
               </div>
-              <p className="text-lg font-medium text-gray-700 mb-2">No unclaimed land available at the moment.</p>
-              <p className="text-sm text-gray-500">Check back later for new listings.</p>
+              {/* You might have an unused or incorrectly placed section for leased parcels here; remove or adapt as needed */}
+              {Array.isArray(latestParcels) && latestParcels.length > 0 ? (
+                <div className="grid md:grid-cols-3 gap-6">
+                  {latestParcels.map((parcel) => (
+                    <ParcelCard
+                      key={parcel.parcel_id}
+                      parcel={parcel}
+                      onViewMap={() => {
+                        window.location.href = `/map?q=${parcel.parcel_id}`;
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <p className="text-lg">No unclaimed land available at the moment.</p>
+                  <p className="text-sm mt-2">Check back later for new listings.</p>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </section>
+          </section>
+
 
       {/* Map Preview Section */}
       <section className="py-24 bg-gradient-to-b from-gray-50 to-white">
