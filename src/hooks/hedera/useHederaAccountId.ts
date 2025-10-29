@@ -2,12 +2,12 @@ import useSWR from "swr";
 import { getHederaAccountIdFromEvmAddress } from "@/lib/hedera/h";
 
 export function useHederaAccountId(address?: string) {
-  const shouldFetch = !!address && address.startsWith("0x");
+  const shouldFetch = typeof address === "string" && address.startsWith("0x");
 
   const { data, error, isLoading } = useSWR(
     shouldFetch ? `/hedera/account/${address.toLowerCase()}` : null,
     async () => {
-      const id = await getHederaAccountIdFromEvmAddress(address!.toLowerCase());
+      const id = await getHederaAccountIdFromEvmAddress(address.toLowerCase());
       return id;
     },
     {
