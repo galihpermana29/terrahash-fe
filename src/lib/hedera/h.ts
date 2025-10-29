@@ -135,12 +135,12 @@ export async function createTopicWithMemo(memo: string) {
   }
 }
 
-export async function submitMessageToTopic(topicId: string, message: string) {
+export async function submitMessageToTopic(topicId: string, message: string, parcelId: string) {
   try {
     const tx = new TopicMessageSubmitTransaction()
       .setTopicId(topicId)
       .setMessage(message)
-      .setTransactionMemo(`Message to topic ${topicId}`);
+      .setTransactionMemo(`Land : ${parcelId}`);
 
     const response = await tx.execute(client);
     const receipt = await response.getReceipt(client);

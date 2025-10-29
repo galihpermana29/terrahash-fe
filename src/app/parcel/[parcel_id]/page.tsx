@@ -127,7 +127,6 @@ export default function ParcelDetailPage() {
       const response = await createObjection({
         parcel_id: parcel.parcel_id,
         message: values.objection,
-        ob_topic_id: parcel.ob_topic_id,
         hash_topic: status === "SUCCESS" ? true : false,
       });
 
