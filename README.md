@@ -84,9 +84,16 @@ TerraHash is a comprehensive land registry and marketplace platform that enables
 
 **Note**: Users must have HBAR in their Hedera account. Get testnet HBAR from [Hedera Portal](https://portal.hedera.com).
 
+## Sequence Diagram
+### Goverment:
+![Gov](https://s12.gifyu.com/images/b3icz.png)
+
+### Land Owner and Investor:
+![User](https://s12.gifyu.com/images/b3icN.png)
+
 ## Flowchart - Workflow Steps
 
-### Current All Flow :
+### Current All Flow:
 ![Architecture Diagram](https://s12.gifyu.com/images/b3iqb.png)
 
 **Objective: Configure a wallet to have government-level permissions for testing purposes.**
@@ -104,7 +111,7 @@ TerraHash is a comprehensive land registry and marketplace platform that enables
 2. Connect your authorized Government Wallet.
 
 
-#### Goverment :
+#### Goverment:
 ![Goverement](https://s12.gifyu.com/images/b3iqK.png)
 
 **Government - Land Registration**
@@ -116,7 +123,7 @@ TerraHash is a comprehensive land registry and marketplace platform that enables
 5. Verification: Navigate to the public homepage and confirm the new property "Unclaimed" is visible in the "Public Verification" section with a 30-day countdown.
 6. Final Transfer: Go back to the Government Portal dashboard. You should see a notification that the title is "Verified & Ready for Transfer".
 
-#### Land Owner :
+#### Land Owner:
 ![Land Owner](https://s12.gifyu.com/images/b3iqH.png)
 
 **Land Owner - List Property for lease/Sell**
@@ -136,7 +143,7 @@ For Leasing :
 7. Enter the **"Price per Year"** for the lease.
 8. Click **"Create Listing"** and approve the transaction in your wallet.
 
-#### Investor :
+#### Investor:
 ![Investor](https://s12.gifyu.com/images/b3iqx.png)
 
 **Investor - Buy / Offer Lease property**
@@ -564,8 +571,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
       </a>
     </td>
     <td align="center" width="33%">
-      <img src="https://github.com/galihpermana29.png" width="120px" style="border-radius: 50%;" alt="Teammate 1"/><br />
-      <sub><b>Teammate Name</b></sub><br />
+      <img src="https://github.com/galihpermana29.png" width="120px" style="border-radius: 50%;" alt="Galih Permana"/><br />
+      <sub><b>Galih Permana</b></sub><br />
       <sub>Full-stack Developer</sub><br /><br />
       <a href="https://github.com/galihpermana29">
         <img src="https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white" alt="GitHub"/>
