@@ -18,7 +18,7 @@
 
 **A Web3-based land registry system for transparent and secure land ownership management in Africa using Hedera Hashgraph**
 
-### [Certificate Hashgraph Developer](https://certs.hashgraphdev.com/bec02a95-b027-43ed-9660-91382d5260e8.pdf) • [Pitch Deck](https://www.canva.com/design/DAG1eRd16cM/wpStiA9qHY1pCEfi8oWeXA/edit?utm_content=DAG1eRd16cM&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton) • [Dorahacks BUIDL](https://dorahacks.io/buidl/34906)
+### [Certificate Hashgraph Developer](https://certs.hashgraphdev.com/bec02a95-b027-43ed-9660-91382d5260e8.pdf) • [Pitch Deck](https://www.canva.com/design/DAG1eRd16cM/JuEUPNFF1haQSv5O8TV45A/view?utm_content=DAG1eRd16cM&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h10fb32a8ca) • [Dorahacks BUIDL](https://dorahacks.io/buidl/34906)
 
 </div>
 
