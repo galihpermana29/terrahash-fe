@@ -18,7 +18,7 @@
 
 **A Web3-based land registry system for transparent and secure land ownership management in Africa using Hedera Hashgraph**
 
-### [Certificate Hashgraph Developer](https://certs.hashgraphdev.com/bec02a95-b027-43ed-9660-91382d5260e8.pdf) • [Pitch Deck](https://www.canva.com/design/DAG1eRd16cM/JuEUPNFF1haQSv5O8TV45A/view?utm_content=DAG1eRd16cM&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h10fb32a8ca) • [Dorahacks BUIDL](https://dorahacks.io/buidl/34906)
+### [Certificate Hashgraph Developer](https://certs.hashgraphdev.com/bec02a95-b027-43ed-9660-91382d5260e8.pdf) • [Pitch Deck](https://www.canva.com/design/DAG1eRd16cM/JuEUPNFF1haQSv5O8TV45A/view?utm_content=DAG1eRd16cM&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h10fb32a8ca) • [Dorahacks BUIDL](https://dorahacks.io/buidl/34906) • [Demo Video](https://youtu.be/BSdbQqCXOE8)
 
 </div>
 
@@ -326,6 +326,26 @@ All financial operations from land purchases to lease payments, from land purcha
 - `updateNFTMetadata()` or `TokenUpdateNftsTransaction()`: Update NFT certificate data
 - `createTopicWithMemo()` or `TopicCreateTransaction()`: Initialize topic
 - `submitMessageToTopic()` or `TopicMessageSubmitTransaction()`: Record events lease or objection
+
+## Why Hedera?
+
+### ESG Credentials
+
+Hedera's carbon-negative footprint is a massive strategic advantage. It perfectly aligns
+with Africa's Sustainable Development Goals (SDGs) and unlocks a new wave of Impact
+& ESG Investors who are mandated to invest in sustainable projects.
+
+### Enterprise Governance
+
+A government will not build its national infrastructure on an anonymous protocol. The
+Hedera Governing Council (Google, Standard Bank) provides a stable, transparent, and
+world-class governance model that enterprise and public-sector clients can trust.
+
+### Unmatched Transparency
+
+The HCS is our core transparency engine. When a new land title is proposed, we broadcast the claim to a public HCS topic. This create an auditable public feed for our 30-day verification period, allowing anyone to monitor new titles and ensuring all dispute claims are logged transparently.
+
+---
 
 ## Prerequisites
 
