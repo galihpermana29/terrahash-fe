@@ -167,12 +167,6 @@ For Leasing :
 11. When your offer is accepted by land owner, click button “**Pay**”
 12. Your wallet will prompt you to approve the transaction, which will create the lease smart contract and transfer the initial funds.
 
-**Land Owner - See Leasing Offer**
-
-1. Open profile page
-2. go to tab “**Review Lease Offer**”
-3. Click “See Detail” to see lease offer detail
-
 ## Key Concepts
 
 ### User Types
