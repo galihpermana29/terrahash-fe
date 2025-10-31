@@ -355,6 +355,7 @@ The HCS is our core transparency engine. When a new land title is proposed, we b
 - Pinata account ([pinata.cloud](https://pinata.cloud)) for IPFS
 - MetaMask, Hashpack or compatible Web3 wallet
 - Hedera testnet account with HBAR ([portal.hedera.com](https://portal.hedera.com))
+- You must have access to a fresh Hedera testnet wallet that has NOT been previously registered as a Landowner or Buyer on the TerraHash platform. This prevents permission conflicts during testing.
 
 ## Getting Started
 
